@@ -1,0 +1,16 @@
+PROBLEMS TO FIX FOR RCTMISS.ADO
+===============================
+
+Miland Joshi, 29aug2013: on a trial where the control arm variable had the values ‘1’ (labelled “Control”) and ‘2’ (labelled “Intervention”), when I ran the program the graph legend (whether I allowed 1 line or 3) seemed to use “0” for the Intervention arm, even though 0 isn’t in the data itself.
+
+last updated 7jan2013
+
+- SM: noconstant drops the constant from the missingness model too - is this what we want?
+
+- Alho option? e.g. attempts(varname)
+
+- Can it be made to work for -nbreg-? (for Nick Horton)
+
+20may2015 (Nexit):
+    fails if arm Z has missing values
+    slow with many excluded values

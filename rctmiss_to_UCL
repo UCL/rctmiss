@@ -1,0 +1,4 @@
+* unix command to copy all rctmiss files up to UCL server
+scp rctmiss.pkg rctmiss.ado rctmiss_smlik.ado rctmiss.sthlp rctmiss.do uk500.dta smoke.dta rmjwiww@socrates.ucl.ac.uk:~/html.pub/stata/missing/
+
+ 

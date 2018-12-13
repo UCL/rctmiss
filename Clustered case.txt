@@ -1,0 +1,15 @@
+What I've done for clustered cases
+
+All PMM methods:  
+\item use new small-sample correction (n-1)/(n-p*) * (c/(c-1)
+\item dof = ceff-1
+
+meanscore: 
+\item replace matrix C with a clustered version
+\item compute effective #clusters (ceff) as 1 per fully/partly obs cluster and w_eff per systematically missing cluster
+
+Two regressions:
+\item compute ceff from a new equality using small-sample corerctions c/(c-1)
+\item compute neff following from this
+\item Note this gets neff=nobs, ceff=cobs under MAR
+\note but it doesn't agree with standard with cobs=nobs 

@@ -1,33 +1,18 @@
-*! version 0.12.4 IRW 13dec2018
+*! version 0.11.1 IRW 31jan2017
 /*******************************************************************************
-TO DO
-	why are *.tmp files sometimes created? e.g. MFC6AD7.tmp
+TO DO:
+	Make X's optional?
+TO DOCUMENT
+	currently -rctmiss:regress,robust- leads to two robust regressions rather than mean score
+	graph options must now go as suboptions of sens()
+	neff for SM: Just use neff=nobs
 HISTORY
-version 0.12.4 13dec2018 - ON UCL WEBSITE AND SSC
-	minor updates to help file
-	no change to ado file
-version 0.12.3 10feb2017
-    also ereturn delta, auxiliary, weights (not/stabilised), model & estmethod instead of old method
-    all sensitivity options moved to suboptions of sens()
-    help file updated
-version 0.12.2 7feb2017
-	fixed bug with sensitivity analysis and two-regressions: wrong b, V were picked up
-	NOTE that data file name uk500.dta must be lowercase
-version 0.12.1 3feb2017
-	improved method naming in output (to match paper)
-	option meanscore renamed fullsandwich 
-		(to distinguish from two linear regressions which is also a mean score method)
-version 0.12 2feb2017 -- ON BSU WEBSITE
-	changed listopt to list2 
-	updated help file
-	made x's optional
-	note that -rctmiss:regress,robust- leads to two robust regressions rather than full sandwich 
-	also note that neff=nobs for SM
 version 0.11.1 30-31jan2017
 	corrected dof calculation, returned only in e(df_r)
 	graph options must now go as suboptions of sens()
 	passed all tests
 version 0.11 28jan2017
+	[this file derived from rctmiss.ado on dropbox dated 17:31 16/1/17]
 	got cluster option to agree exactly with standard methods
 version 0.10 12-13jan2017
 	deleted pmm_glm
@@ -98,7 +83,7 @@ version 0.2.1  21may2010  drops use of dicmd
 version 0.2    16mar2010  rand() changed to sens(); gphoptions now added `loose'; new options debug robust lpattern() nograph; now calls rctmiss_*.ado not mnar_*.ado; various bug fixes
 
 Test script:
-    rctmiss_testscript.do
+    H:\missing\sensanal\RCTmiss\rctmiss_testscript.do
 ********************************************************************************/
 
 prog def rctmiss, eclass
@@ -117,9 +102,8 @@ if "`command'"=="" {
         di as error "last estimates not found"
         exit 301
     }
-    cap noi ereturn display `prefix'
-	if _rc di as error "Did you omit the regression command after the colon?"
-    exit _rc
+    ereturn display `prefix'
+    exit
 }
 
 *** PARSE REGRESSION COMMAND ***
@@ -127,12 +111,12 @@ gettoken regcmd restofcommand : command
 unabcmd `regcmd'
 local regcmd = r(cmd)
 local 0 `restofcommand'
-syntax varlist [if] [in] [fweight aweight iweight pweight], [level(passthru) CLuster(varname) vce(string) noCONStant *]
+syntax varlist [if] [in] [fweight aweight iweight pweight], [level(passthru) CLuster(varname) vce(string) *]
 marksample touse, novarlist
 gettoken yvar xvars: varlist
 if "`weight'"!="" local weightexp [`weight'`exp']
 local regifinwt `if' `in' `weightexp'
-local regopts `constant' `options'
+local regopts `options'
 local level1 `level'
 if !missing("`vce'") {
 	if word("`vce'",1) != "cluster" {
@@ -151,11 +135,13 @@ if !mi("`cluster'") local clusteropt cluster(`cluster')
 *** PARSE PREFIX COMMAND ***
 local 0 `prefix'
 syntax, [ ///
-    sens(string) PMMDelta(string) SMDelta(string) AUXiliary(varlist) FULLSandwich /// model options
-    basemiss(string)                            /// missing baseline options
-    eform(string) 								/// display options
-	nosw savewt(string) noMMCONStant			/// selection model options
-    level(passthru) debug mmstore(passthru) keepmat(passthru) dicmd neff(string) ceff(string) /// undocumented options
+    sens(string) SMDelta(string) PMMDelta(string) nosw AUXiliary(varlist) /// model options
+    basemiss(string)                                        /// missing baseline options
+    stagger(real -1) COLors(string) LWidth(passthru)        /// graph options
+    LPATterns(string) nograph ciband                       /// graph options
+    senstype(string) list LISTOPTions(string) clear         /// output and display options
+    savewt(string) eform(string) savedta(string) level(passthru) /// output and display options
+    debug mmstore(passthru) MEANScore keepmat(passthru) dicmd neff(string) ceff(string) /// undocumented options
     ]
 
 local level2 `level'
@@ -173,22 +159,12 @@ if "`eform'"!="" local eformopt eform(`eform')
 if "`eform'"!="" local bparmname "`eform'"
 else local bparmname "Coefficient"
 
-* PARSE SENSITIVITY ANALYSIS
+* PARSE SENS
 if !mi("`sens'") {
 	local 0 `sens'
-	syntax varname, [senstype(string) list LIST2(string) savedta(string) clear nograph /// sensitivity analysis output options 
-        stagger(real -1) COLors(string) LWidth(passthru)        /// sensitivity analysis graph options 
-        LPATterns(string) MSymbol(string) ciband HORizontal       /// sensitivity analysis graph options 
-        *]
+	syntax varname, [*]
 	local sens `varlist'
-    if !mi("`list2'") local list list
-    local listoptions `list2'
 	local gphoptions `options'
-    // check some output is requested
-    if "`graph'"=="nograph" & "`savedta'"=="" & "`clear'"=="" & "`list'"=="" {
-        di as error "Nograph option, please specify one or more of: list, savedta(), clear"
-        exit 498
-    }
 }
 
 * PARSE DELTA
@@ -217,12 +193,12 @@ else {
 	local expo
 	local log
 }
-local deltaname2 = cond("`expo'"=="exp", "Exp(delta)", "Delta")
+local deltaname2 = cond("`expo'"=="exp", "exp(delta)", "delta")
 local deltaname `deltaname1' `deltaname2' 
 local deltaparm = lower("`deltaname1'`deltaname2'")
 
 if "`sens'"=="" { // Check for syntax errors
-    foreach thing in savedta clear list gphoptions colors lwidth {
+    foreach thing in savedta clear list listoptions gphoptions colors lwidth {
         if "``thing''"!="" & "`badthings'"!="" local s s
         if "``thing''"!="" local badthings `badthings' ``thing''
     }
@@ -261,7 +237,6 @@ if !mi("`ceff'") {
 }
 
 // IPWs
-if !mi("`smdelta'") & !mi("`fullsandwich'") di as error "Option smdelta() implies selection model - option fullsandwich ignored"
 if "`savewt'"!="" {
     confirm new variable `savewt'
     local savewtopt savewt(`savewt')
@@ -274,7 +249,7 @@ local auxvars `auxiliary'
 
 *** START OUTPUT ***
 local col as result _col(26)
-di _new as text _dup(10) "{c -}" " RCT analysis allowing for informatively missing outcomes " _dup(10) "{c -}"
+di as text _dup(10) "{c -}" " RCT analysis allowing for informatively missing outcomes " _dup(10) "{c -}"
 preserve
 
 *** HANDLE INCOMPLETE BASELINES AND AUXILIARIES ***
@@ -311,18 +286,17 @@ if "`xvars'"!="" {
     }
 	}
 }
+
 *** HANDLE COLLINEARITY (and combine Mvars with xvars)
 * 1. collinearity among S covariates in observed data
 local xvars0 `xvars' `mvars'
-_rmcoll `xvars0' if `touse' & !mi(`yvar'), `constant'
+_rmcoll `xvars0' if `touse' & !mi(`yvar')
 local xvars = r(varlist)
-if "`xvars'"=="." local xvars
 if !`:list xvars === xvars0' di as error "Warning: collinear covariates in individuals with observed outcome"
 * 2. collinearity among auxiliary covariates in observed data
 local xvarsaux0 `xvars' `auxvars' `mauxvars' 
-_rmcoll `xvarsaux0' if `touse' & !mi(`yvar'), `constant'
+_rmcoll `xvarsaux0' if `touse' & !mi(`yvar')
 local xvarsaux = r(varlist)
-if "`xvarsaux'"=="." local xvarsaux
 if !`:list xvarsaux === xvarsaux0' di as error "Warning: collinear auxiliaries in individuals with observed outcome"
 local auxvars : list xvarsaux - xvars
 
@@ -336,23 +310,18 @@ local restofcommand `yvar' `xvars' `regifinwt', `regopts' `auxopt' ///
 	`neffopt' `clusteropt' `debug'
 if "`smdelta'"!="" {
     * SELECTION MODEL / IPW METHOD
-    local maincmd sm_ipw `regcmd' `restofcommand' `savewtopt' `sw' `mmstore' `mmconstant'
+    local maincmd sm_ipw `regcmd' `restofcommand' `savewtopt' `sw' `mmstore'
     local deltaname1 SM 
-	local modelname Selection model
-	local estmethod Inverse probability weighting
 }
 if "`pmmdelta'"!="" {
     * PATTERN MIXTURE MODEL / MEAN SCORE METHOD
-    if "`regcmd'"!="regress" | "`fullsandwich'"=="fullsandwich" | !mi("`auxvars'") {
+    if "`regcmd'"!="regress" | "`meanscore'"=="meanscore" | !mi("`auxvars'") {
         local maincmd pmm_glm3 `regcmd' `restofcommand' `keepmat' 
-		local estmethod Full sandwich variance
     }
     else {
         local maincmd pmm_reg `restofcommand' 
-		local estmethod Two linear regressions
     }
     local deltaname1 PMM 
-	local modelname Pattern-mixture model
 }
 local method = word("`maincmd'",1)
 
@@ -403,14 +372,12 @@ if `nmis'==0 di as error " (possible error)"
 else if !mi("`cluster'") di as result " (" as result `cmis' as result " clusters)"
 else di
 di as text "Missing data assumption: " `col' "`assumption'"
-di as text "Missing data model: " `col' "`modelname'"
 di as text "`deltaname':" `col' "`delta'" _c
 if !mi("`sens'") di as text " (base = " as result `base' as text ")"
 else di
 if mi("`auxvars'") local auxvarstext (none)
 else local auxvarstext `auxvars'
 di as text "Auxiliary variables:" `col' "`auxvarstext'"
-di as text "Estimation method: " `col' "`estmethod'"
 if !missing("`cluster'") di as text "Variances clustered on:" `col' "`cluster'"
 
 *** ANALYSIS ***
@@ -457,17 +424,8 @@ if "`sens'"=="" {
     foreach stat in neff pstar { 
         ereturn scalar `stat' = ``stat'name'
     }
-	if "`expo'"=="exp" ereturn local delta log(`delta')
-	else ereturn local delta `delta'
-	ereturn local auxiliary `auxiliary'
-    *ereturn local method `method'
-    ereturn local model `modelname'
-    ereturn local estmethod `estmethod'
+    ereturn local method `method'
     if "`smdelta'"!="" & "`savewt'"!="" ereturn local IPW `savewt'
-    if "`method'"=="sm_ipw" {
-        if "`sw'"!="nosw" ereturn local weights "stabilised"
-        else ereturn local weights "not stabilised"
-    }
 
     * display results
 	`ifdebug' di as text "*** Final results ***"
@@ -500,6 +458,11 @@ else {
         exit 198
     }
     if wordcount(r(numlist))==1 di as error "Warning: only one value in delta: graph will look weird"
+    // check some output is requested
+    if "`graph'"=="nograph" & "`savedta'"=="" & "`clear'"=="" & "`list'"=="" {
+        di as error "Nograph option, please specify one or more of: list, savedta(), clear"
+        exit 498
+    }
     qui levelsof `sens' if `touse', local(randlevels)
     if wordcount("`randlevels'")>2 {
         di as error "Sorry, rctmiss can only handle two-arm trials at present"
@@ -535,9 +498,7 @@ else {
             `ifdebug' di as input _new "delta=`logdel', type=`type'"
             `ifdebug' di as input "`maincmd' delta(`deltavar')"
             `dicmd' qui `maincmd' delta(`deltavar')
-			mat `bname'=`bname'[1,"`sens'"]
-			mat `Vname'=`Vname'["`sens'","`sens'"]
-            post `post' (`type') (`logdel') (`bname'[1,1]) (sqrt(`Vname'[1,1])) (scalar(`dofname')) (scalar(`neffname'))
+            post `post' (`type') (`logdel') (_b[`sens']) (_se[`sens']) (scalar(`dofname')) (scalar(`neffname'))
         }
     }
     di
@@ -566,6 +527,7 @@ else {
         gen exp_b = exp(b)
         gen exp_b_low = exp(b-zcrit*se)
         gen exp_b_upp = exp(b+zcrit*se)
+        local gphoptions yscale(log) `gphoptions'
         local blistvars exp_b exp_b_low exp_b_upp
         local bvar exp_b
     }
@@ -577,15 +539,8 @@ else {
     }
     
     if "`list'"=="list" {    
-        local 0 , `listoptions'
-        syntax , [SEParator(passthru) sepby(varlist) ABbreviate(passthru) *]
-        if mi("`separator'`sepby'") local listoptions `listoptions' sepby(delta) 
-        if mi("`abbreviate'") local listoptions `listoptions' abbreviate(10)
-        cap noi list type `dlistvar' `blistvars' dof neff, `listoptions'
-        if _rc {
-            di as error "Ignoring suboptions in list(`list2')"
-            list type `dlistvar' `blistvars' dof neff
-        }
+        if "`listoptions'"=="" local listoptions sepby(delta) abb(10)
+        list type `dlistvar' `blistvars' dof neff, `listoptions'
     }
     
     if "`graph'"!="nograph" {
@@ -600,17 +555,6 @@ else {
         local lpattern1 = word("`lpatterns'",1)
         local lpattern2 = word("`lpatterns'",2)
         local lpattern3 = word("`lpatterns'",3)
-        if mi("`horizontal'") {
-            local x x
-            local y y
-        }
-        else {
-            local x y
-            local y x
-        }
-        if "`eform'"!="" {
-            local gphoptions `gphoptions' `y'scale(log)
-        }
         if "`ciband'"=="" { // confidence limits as rspikes
             if `stagger'<0 {
                 qui sum deltagraph, meanonly
@@ -626,19 +570,20 @@ else {
             if "`senstype'"=="both" local legendopt legend(order(3) `legendboth' rows(1))
             else if "`senstype'"=="one" local legendopt legend(order(1 5) `legendone' rows(1))
             else local legendopt legend(order(1 3 5) `legendboth' `legendone' rows(1))
-            if mi("`horizontal'") {
-                local vars `bvar' deltagraph
-            }
-            else {
-                local vars deltagraph `bvar' 
-            }
             #delimit ;
-            local graphcmd twoway;
-            forvalues j=1/3 {;
-                local graphcmd `graphcmd'
-                    (scatter `vars' if type==`j', c(l) lcol(`col`j'') `lwidth' `lpattern`j'' mcol(`col`j'') ms(`msymbol')) 
-                    (rspike `bvar'_low `bvar'_upp deltagraph if type==`j', lcol(`col`j'') `lwidth' `lpattern`j'' `horizontal');
-            };
+            local graphcmd twoway
+                (line `bvar' deltagraph if type==1, lcol(`col1') `lwidth' `lpattern1') 
+                (rspike `bvar'_low `bvar'_upp deltagraph if type==1, lcol(`col1') `lwidth' `lpattern1')
+                (line `bvar' deltagraph if type==2, lcol(`col2') `lwidth' `lpattern2') 
+                (rspike `bvar'_low `bvar'_upp deltagraph if type==2, lcol(`col2') `lwidth' `lpattern2')
+                (line `bvar' deltagraph if type==3, lcol(`col3') `lwidth' `lpattern3') 
+                (rspike `bvar'_low `bvar'_upp deltagraph if type==3, lcol(`col3') `lwidth' `lpattern3')
+                ,
+                `legendopt'
+                ytitle("`bparmname' for `sens' (`level'% CI)")
+                xtitle(`deltaname' in specified arm(s))
+                `gphoptions'
+            ;
             #delimit cr
         }
         else { // confidence limits as lines
@@ -651,26 +596,18 @@ else {
             else if "`senstype'"=="one" local legendopt legend(order(1 7) `legendone' rows(1))
             else local legendopt legend(order(1 4 7) `legendboth' `legendone' rows(1))
             #delimit ;
-            local graphcmd twoway;
-            forvalues j=1/3 {;
-                foreach bvartype in `bvar' `bvar'_low `bvar'_upp {;
-                    if "`bvartype'"=="`bvar'" local lpattern lpattern(`lpattern1');
-                    else local lpattern lpattern(`lpattern2');
-                    if mi("`horizontal'") local vars `bvartype' deltagraph;
-                    else local vars deltagraph `bvartype'; 
-                    local graphcmd `graphcmd' 
-                        (line `vars' if type==`j', lcol(`col`j'' `col`j'' `col`j'') `lwidth' `lpattern');
-                };
-            };
+            local graphcmd twoway
+                (line `bvar' `bvar'_low `bvar'_upp deltagraph if type==1, lcol(`col1' `col1' `col1') `lwidth' `lpattern') 
+                (line `bvar' `bvar'_low `bvar'_upp deltagraph if type==2, lcol(`col2' `col2' `col2') `lwidth' `lpattern') 
+                (line `bvar' `bvar'_low `bvar'_upp deltagraph if type==3, lcol(`col3' `col3' `col3') `lwidth' `lpattern') 
+                ,
+                `legendopt'
+                ytitle(`bparmname' for `sens')
+                xtitle(`deltaname' in specified arm(s))
+                `gphoptions'
+            ;
             #delimit cr
         }
-        #delimit ;
-        local graphcmd `graphcmd', `legendopt'
-            `y'title("`bparmname' for `sens' (`level'% CI)")
-            `x'title(`deltaname' in specified arm(s))
-            note(Base: `deltaname' = `base')
-            `gphoptions';
-        #delimit cr
         `ifdebug' di as text `"*** Running: `graphcmd'"'
         `graphcmd'
         if "`clear'"!="" {
@@ -680,9 +617,6 @@ else {
     }
     if "`clear'"!="" {
          restore, not
-    }
-    if "`savedta'"!="" {
-        save `savedtafile', replace
     }
     ereturn clear // Nothing sensible to ereturn
 } // END OF SENSITIVITY ANALYSIS
@@ -702,7 +636,7 @@ syntax varlist(min=1) [if] [in], delta(string) ///
 marksample touse, novarlist
 gettoken y xlist : varlist
 if "`debug'"=="" local ifdebug qui
-*di as text "Method:" _col(26) as result "two linear regressions"
+di as text "Method:" _col(26) as result "two linear regressions"
 
 tempname bI vI vIlarge bD vD vDlarge vlarge vIlargen vDlargen vlargen
 
@@ -765,7 +699,7 @@ syntax anything [if] [in], delta(string) ///
 	[debug noSUMwt savewt(string) ///
 	AUXiliary(varlist) noCONStant nosw ///
 	cluster(passthru) ceffname(string) ceff(real 0) cobs(string) ctot(string) cmis(string) /// cluster options
-	mmstore(string) noMMCONStant]
+	mmstore(string)]
 
 // PARSE
 marksample touse, novarlist
@@ -774,7 +708,7 @@ unabcmd `cmd'
 local cmd = r(cmd)
 gettoken y xlist : varlist
 if "`debug'"=="" local ifdebug qui
-*di as text "Method:" _col(26) as result "inverse probability weighting"
+di as text "Method:" _col(26) as result "inverse probability weighting"
 
 qui count if `touse'
 local ntot = r(N)
@@ -797,8 +731,7 @@ else local vceopt vce(cluster `cluster')
 tempvar miss offset lp1 lp2 weight
 qui gen `miss' = mi(`y') if `touse'
 qui gen `offset' = cond(`miss',0,`delta'*`y')
-if "`mmconstant'"=="nommconstant" local mmconstant noconstant
-qui ml model lf rctmiss_smlik (`miss' = `xlist' `auxiliary', offset(`offset') `mmconstant'), `vceopt'
+qui ml model lf rctmiss_smlik (`miss' = `xlist' `auxiliary', offset(`offset') `constant'), `vceopt'
 `ifdebug' ml maximize
 if "`mmstore'"!="" est store `mmstore'
 qui predict `lp1'
@@ -809,7 +742,7 @@ if "`sw'"!="nosw" {
     // FIT MAR MISSINGNESS MODEL
     `ifdebug' di _new as text "*** Fitting MAR missingness model ***"
 	* without auxiliary!
-    qui ml model lf rctmiss_smlik (`miss' = `xlist', `mmconstant'), `vceopt'
+    qui ml model lf rctmiss_smlik (`miss' = `xlist', `constant'), `vceopt'
     `ifdebug' ml maximize
     qui predict `lp2'
     qui replace `weight' = `weight' / (1 + exp(`lp2')) if `touse'
@@ -878,7 +811,7 @@ if !inlist("`cmd'","regress","logit","poisson") {
 }
 gettoken y xlist : vars
 if "`debug'"=="" local ifdebug qui
-*di as text "Method:" _col(26) as result "mean score + joint sandwich variance"
+di as text "Method:" _col(26) as result "mean score + joint sandwich variance"
 if !missing("`weight'") {
 	local wtexp [`weight'=`exp']
 	local timesweight *sqrt(`exp')
@@ -893,9 +826,9 @@ marksample touse, novarlist
 tempvar id rowmiss residP predP residS predS ystar offsetvar residPS
 tempname bP bCC Vdrop Vmiss Vfull Binv B BPS BPP BSP BSP0 BSS C CSP CSP0 CSS CPP
 gen `id'=_n
-unab xPlist : `xlist' `auxiliary', min(0)
+unab xPlist : `xlist' `auxiliary'
 local nxPlist : word count `xPlist'
-unab xSlist : `xlist', min(0)
+unab xSlist : `xlist'
 local nxSlist : word count `xSlist'
 `ifdebug' di as text "PM: " as result "`nxPlist'" as text " variables: " as result "`xPlist'"
 `ifdebug' di as text "SM: " as result "`nxSlist'" as text " variables: " as result "`xSlist'"
@@ -1006,8 +939,8 @@ local top    = 1
 local bottom = `nxSlist'
 local left   = `nxSlist' + 1
 local right  = `nxSlist' + `nxPlist' + `hascons'
-if `bottom'>=`top' mat `BSP' = `BSP0'[`top'..`bottom',`left'..`right']
-if `hascons' mat `BSP' = nullmat(`BSP') \ `BSP0'[`right',`left'..`right']
+mat `BSP' = `BSP0'[`top'..`bottom',`left'..`right']
+if `hascons' mat `BSP' = `BSP' \ `BSP0'[`right',`left'..`right']
 mat `BSP' = -`BSP'
 mat opaccum `BPP' = `xPlist' if `touse', group(`id') opvar(`opPP') `constant'
 mat `BPS' = J(`pP',`pS',0)
@@ -1084,7 +1017,7 @@ if `hascluster' {
 	scalar `ceffname' = `ceffvalue'
 	`ifdebug' di as result " (" `ceffvalue' " clusters)"
 }
-else `ifdebug' di
+else di
 
 // DF CORRECTION
 if `hascluster' {
