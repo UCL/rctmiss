@@ -1,5 +1,5 @@
 {smcl}
-{* *! version 0.12.1 3feb2017}{...}
+{* *! version 0.12.3 10feb2017}{...}
 {viewerjumpto "Description" "rctmiss##description"}{...}
 {viewerjumpto "Syntax" "rctmiss##syntax"}{...}
 {viewerjumpto "Graphical sensitivity analyses" "rctmiss##gsa"}{...}
@@ -14,7 +14,7 @@
 {viewerjumpto "Author and updates" "rctmiss##updates"}{...}
 {title:Title}
 
-{phang}{bf:rctmiss} {hline 2} analyse a randomised controlled trial (RCT) allowing for informatively missing outcome data.
+{phang}{bf:rctmiss} {hline 2} Analyse a randomised controlled trial (RCT) allowing for informatively missing outcome data.
 
 {marker description}{...}
 {title:Description}
@@ -28,8 +28,8 @@ This forms a part of an intention-to-treat analysis strategy ({help rctmiss##WHC
 The data and missingness are modelled jointly using either 
 a pattern-mixture model (modelling the differences between missing and observed data)
 or a selection model (modelling the missing data mechanism).
-Assumptions about the missing data are expressed via a parameter delta which measures the degree of departure from missing at random.
-I recommend the use of the pattern-mixture model as it usually makes the parameter delta easier to interpret.
+Assumptions about the missing data are expressed via a sensitivity parameter delta which measures the degree of departure from missing at random.
+I recommend the use of the pattern-mixture model as it usually makes the sensitivity parameter delta easier to interpret.
 Results can be obtained for a single assumption (a single value of delta, possibly varying between individuals), 
 or graphed over a range of assumptions (a range of values of delta).
 
@@ -50,14 +50,6 @@ Randomised group is one of the covariates in x.
 {synoptline}
 
 {syntab:Model options}
-{synopt:{opt sens(varname[,graph_options])}}
-Defines the randomised group variable (which must be coded 0/1) 
-whose coefficient is to be explored as delta varies in a sensitivity analysis. 
-If not specified, then the analysis uses a single value of delta.
-{it:graph_options} are options for the sensitivity graph.{p_end}
-{synopt:{opt senstype(string)}}{opt senstype(equal|unequal)} requests sensitivity analyses with delta equal/unequal across randomised groups; 
-    {opt senstype(all)} (the default) requests all sensitivity analyses. 
-    The sensitivity analyses are defined in {help rctmiss##gsa:Graphical sensitivity analyses}.{p_end}
 {synopt:{opt pmmd:elta(IM_exp)}}Specifies a pattern-mixture model (PMM) analysis: see {help rctmiss##IM_expression:Specifying delta}.{p_end}
 {synopt:{opt smd:elta(IM_exp)}}Specifies a selection model (SM) analysis: see {help rctmiss##IM_expression:Specifying delta}.{p_end}
 {synopt:{opt aux:iliary(varlist)}}Specifies any auxiliary variables -- 
@@ -66,6 +58,36 @@ but are in the imputation model (for PMM analysis) or the missingness model (for
 {synopt:{opt fulls:andwich}}In a PMM analysis, 
 specifies that the full sandwich estimation method is to be used: see 
 {help rctmiss##PM:Missing values of outcome: pattern mixture model}.{p_end}
+{synopt:{opt sens(varname[,suboptions])}}
+Defines the randomised group variable (which must be coded 0/1) 
+whose coefficient is to be explored as the sensitivity parameter delta varies in a sensitivity analysis. 
+If not specified, then the analysis uses a single value of delta.
+{help rctmiss##sensopts:Suboptions for the sensitivity analysis}
+and
+{help rctmiss##sensgraphopts:suboptions for the sensitivity analysis graph}
+are described below.{p_end}
+
+{marker sensopts}{syntab:Suboptions of {opt sens()} for the sensitivity analysis}
+
+{synopt:{opt senstype(string)}}{opt senstype(equal|unequal)} requests sensitivity analyses with delta equal/unequal across randomised groups; 
+    {opt senstype(all)} (the default) requests all sensitivity analyses. 
+    The sensitivity analyses are defined in {help rctmiss##gsa:Graphical sensitivity analyses}.{p_end}
+{synopt:{opt list} or {opt list(options)}}Requests a listing of the sensitivity analysis results.{p_end}
+{synopt:{opt savedta(file[,replace])}}Writes the sensitivity analysis results to the specified file.{p_end}
+{synopt:{opt clear}}Clears the current data and loads the sensitivity analysis results into memory. This is useful for editing the graph command, which is stored in F9.{p_end}
+{synopt:{opt nograph}}Suppresses graph. Only allowed with {opt list}, {opt savedta} or {opt clear} option.{p_end}
+
+{marker sensgraphopts}{syntab:Suboptions of {opt sens()} for the sensitivity analysis graph}
+
+{synopt:{opt stagger(#)}}Controls the horizontal separation of the different sensitivity analyses at each value of delta.{p_end}
+{synopt:{opt col:ors(string)}}Up to three {help colorstyle:colours} for sensitivity analyses.{p_end}
+{synopt:{opt lw:idth(#)}}{help linewidthstyle:Line width} option for the whole graph.{p_end}
+{synopt:{opt lpat:terns(string)}}Names {help  linepatternstyle:line patterns} for sensitivity analyses; 
+or, with the {opt ciband} option, for point estimate and confidence limits.{p_end}
+{synopt:{opt ms:ymbol(string)}}{help symbolstyle:Symbol style} option for the graph. 
+Use {cmd:msymbol(none)} to suppress marker symbols.{p_end}
+{synopt:{opt ciband}}Joins confidence limits to each other (as a confidence band) rather than to the point estimates (as in a forest plot).{p_end}
+{synopt:graph_options}Other {help twoway_options:options for twoway graphs}: for example {opt name()}, {opt saving()}, {opt ylab()}, {opt title()} etc.
 
 {syntab:Handling incomplete baseline variables}
 {synopt:{opt basemiss(mean|mim [, min(#)])}}See {help rctmiss##basemiss:Missing values of baseline covariates}.
@@ -75,22 +97,9 @@ I don't recommend excluding observations with missing baseline values;
 if you want to do this then you must use {help if} or {help in} on your estimation command.
 {p_end}
 
-{syntab:Appearance of the sensitivity analysis graph}
-{synopt:{opt stagger(#)}}Controls the horizontal separation of the different sensitivity analyses at each value of delta.{p_end}
-{synopt:{opt col:ors(string)}}Up to three {help colorstyle:colours} for sensitivity analyses.{p_end}
-{synopt:{opt lw:idth(#)}}{help linewidthstyle:Line width} option for the whole graph.{p_end}
-{synopt:{opt lpat:terns(string)}}Names {help  linepatternstyle:line patterns} for sensitivity analyses; 
-or, with the {opt ciband} option, for point estimate and confidence limits.{p_end}
-{synopt:{opt nograph}}Suppresses graph. Only allowed with {opt list}, {opt savedta} or {opt clear} option.{p_end}
-{synopt:{opt ciband}}Joins confidence limits to each other (as a confidence band) rather than to the point estimates (as in a forest plot).{p_end}
-
-{syntab:Output after sensitivity analysis}
-{synopt:{opt list} or {opt list(options)}}Requests a listing of the sensitivity analysis results.{p_end}
-{synopt:{opt savedta(file[,replace])}}Writes the sensitivity analysis results to the specified file.{p_end}
-{synopt:{opt clear}}Clears the current data and loads the sensitivity analysis results into memory. This is useful for editing the graph command, which is stored in F9.{p_end}
-
 {syntab:Display}
-{synopt:{opt eform(string)}}Reports results on the exponentiated scale. {opt eform(string)} is the default when the main command is {help logistic}.{p_end}
+{synopt:{opt eform(string)}}Reports estimated coefficients on the exponentiated scale, named as {it:string}. 
+{opt eform(Odds ratio)} is the default when the main command is {help logistic}.{p_end}
 
 {syntab:Selection model options}
 {synopt:{opt nosw}}Causes the weights not to be stabilised.{p_end}
@@ -221,7 +230,8 @@ That is, use {cmd:xi:rctmiss...} and not {cmd:rctmiss:xi...}.
 
 {p 0 0 0}{cmd:UK500 data (quantitative outcome)}
 
-{phang}. {stata "use http://www.homepages.ucl.ac.uk/~rmjwiww/stata/missing/UK500.dta, clear"}
+{phang}. {stata "use http://www.mrc-bsu.cam.ac.uk/IW_Stata/missing/uk500.dta, clear"}
+{* -net- always downloads file name as lower-case, and -use- is case-sensitive over the internet}
 
 {p 0 0 0}Analysis assuming MAR, dropping missing baselines:
 
@@ -257,7 +267,7 @@ in one arm or in both arms:
 
 {p 0 0 0}{cmd:Smoking data (binary outcome)}
 
-{phang}. {stata "use http://www.homepages.ucl.ac.uk/~rmjwiww/stata/missing/smoke.dta, clear"}
+{phang}. {stata "use http://www.mrc-bsu.cam.ac.uk/IW_Stata/missing/smoke.dta, clear"}
 
 {phang}. {stata tab rand quit, miss}
 
@@ -280,18 +290,18 @@ in one arm or in both arms:
 
 {title:References}{marker references}
 
+{marker WCH17}{phang}White IR, Carpenter J, Horton NJ. A mean score method for sensitivity analysis
+to departures from the missing at random assumption in randomised trials.
+Under review.
+
+{marker WHCP11}{phang}White IR, Horton NJ, Carpenter J, Pocock SJ. An intention-to-treat analysis strategy for randomised trials with missing outcome data. British Medical Journal 2011;342:d40.
+{browse "http://www.bmj.com/content/342/bmj.d40.full"}
+
 {marker WT05}{phang}White IR, Thompson SG. Adjusting for partially missing baseline measurements in randomised trials. Statistics in Medicine 2005; 24: 993-1007.
 {browse "http://onlinelibrary.wiley.com/doi/10.1002/sim.1981/abstract"}
 
 {marker HWW08}{phang}Higgins JPT, White IR, Wood AM. Imputation methods for missing outcome data in meta-analysis of clinical trials. Clinical Trials 2008; 5: 225-239.
 {browse "http://ctj.sagepub.com/content/5/3/225.short"}
-
-{marker WCH17}{phang}White IR, Carpenter J, Horton NJ. A mean score method for sensitivity analysis
-to departures from the missing at random assumption in randomised trials.
-Statistica Sinica, under review.
-
-{marker WHCP11}{phang}White IR, Horton NJ, Carpenter J, Pocock SJ. An intention-to-treat analysis strategy for randomised trials with missing outcome data. British Medical Journal 2011;342:d40.
-{browse "http://www.bmj.com/content/342/bmj.d40.full"}
 
 
 {title:Author and updates}{marker updates}
@@ -300,7 +310,9 @@ Statistica Sinica, under review.
 Email {browse "mailto:ian.white@ucl.ac.uk":ian.white@ucl.ac.uk}.
 
 {p}You can get the latest version of this and my other Stata software using 
-{stata "net from http://www.homepages.ucl.ac.uk/~rmjwiww/stata/"}.
+{stata "net from http://www.mrc-bsu.cam.ac.uk/IW_Stata/"}.
 
-
+{p}I thank James Carpenter (MRC CTU at UCL, UK) and Nicholas Horton (Amherst College, USA) 
+for working with me on the theory behind this method,
+and Tim Morris (MRC CTU at UCL, UK) for helpful comments on the progam.
 

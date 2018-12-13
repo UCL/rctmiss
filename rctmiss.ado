@@ -1,6 +1,15 @@
-*! version 0.12.1 IRW 3feb2017
+*! version 0.12.3 IRW 10feb2017
 /*******************************************************************************
+TO DO
+	why are *.tmp files sometimes created? e.g. MFC6AD7.tmp
 HISTORY
+version 0.12.3 10feb2017
+    also ereturn delta, auxiliary, weights (not/stabilised), model & estmethod instead of old method
+    all sensitivity options moved to suboptions of sens()
+    help file updated
+version 0.12.2 7feb2017
+	fixed bug with sensitivity analysis and two-regressions: wrong b, V were picked up
+	NOTE that data file name uk500.dta must be lowercase
 version 0.12.1 3feb2017
 	improved method naming in output (to match paper)
 	option meanscore renamed fullsandwich 
@@ -138,13 +147,10 @@ if !mi("`cluster'") local clusteropt cluster(`cluster')
 *** PARSE PREFIX COMMAND ***
 local 0 `prefix'
 syntax, [ ///
-    sens(string) senstype(string) PMMDelta(string) SMDelta(string) AUXiliary(varlist) FULLSandwich /// model options
-    basemiss(string)                                        /// missing baseline options
-    stagger(real -1) COLors(string) LWidth(passthru)        /// graph options
-    LPATterns(string) nograph ciband                       /// graph options
-    list LIST2(string) savedta(string) clear         /// output options after sensitivity analysis
+    sens(string) PMMDelta(string) SMDelta(string) AUXiliary(varlist) FULLSandwich /// model options
+    basemiss(string)                            /// missing baseline options
     eform(string) 								/// display options
-	nosw savewt(string) noMMCONStant						/// selection model options
+	nosw savewt(string) noMMCONStant			/// selection model options
     level(passthru) debug mmstore(passthru) keepmat(passthru) dicmd neff(string) ceff(string) /// undocumented options
     ]
 
@@ -163,15 +169,22 @@ if "`eform'"!="" local eformopt eform(`eform')
 if "`eform'"!="" local bparmname "`eform'"
 else local bparmname "Coefficient"
 
-if !mi("`list2'") local list list
-local listopts `list2'
-
-* PARSE SENS
+* PARSE SENSITIVITY ANALYSIS
 if !mi("`sens'") {
 	local 0 `sens'
-	syntax varname, [*]
+	syntax varname, [senstype(string) list LIST2(string) savedta(string) clear nograph /// sensitivity analysis output options 
+        stagger(real -1) COLors(string) LWidth(passthru)        /// sensitivity analysis graph options 
+        LPATterns(string) MSymbol(string) ciband HORizontal       /// sensitivity analysis graph options 
+        *]
 	local sens `varlist'
+    if !mi("`list2'") local list list
+    local listoptions `list2'
 	local gphoptions `options'
+    // check some output is requested
+    if "`graph'"=="nograph" & "`savedta'"=="" & "`clear'"=="" & "`list'"=="" {
+        di as error "Nograph option, please specify one or more of: list, savedta(), clear"
+        exit 498
+    }
 }
 
 * PARSE DELTA
@@ -440,8 +453,17 @@ if "`sens'"=="" {
     foreach stat in neff pstar { 
         ereturn scalar `stat' = ``stat'name'
     }
-    ereturn local method `method'
+	if "`expo'"=="exp" ereturn local delta log(`delta')
+	else ereturn local delta `delta'
+	ereturn local auxiliary `auxiliary'
+    *ereturn local method `method'
+    ereturn local model `modelname'
+    ereturn local estmethod `estmethod'
     if "`smdelta'"!="" & "`savewt'"!="" ereturn local IPW `savewt'
+    if "`method'"=="sm_ipw" {
+        if "`sw'"!="nosw" ereturn local weights "stabilised"
+        else ereturn local weights "not stabilised"
+    }
 
     * display results
 	`ifdebug' di as text "*** Final results ***"
@@ -474,11 +496,6 @@ else {
         exit 198
     }
     if wordcount(r(numlist))==1 di as error "Warning: only one value in delta: graph will look weird"
-    // check some output is requested
-    if "`graph'"=="nograph" & "`savedta'"=="" & "`clear'"=="" & "`list'"=="" {
-        di as error "Nograph option, please specify one or more of: list, savedta(), clear"
-        exit 498
-    }
     qui levelsof `sens' if `touse', local(randlevels)
     if wordcount("`randlevels'")>2 {
         di as error "Sorry, rctmiss can only handle two-arm trials at present"
@@ -514,7 +531,9 @@ else {
             `ifdebug' di as input _new "delta=`logdel', type=`type'"
             `ifdebug' di as input "`maincmd' delta(`deltavar')"
             `dicmd' qui `maincmd' delta(`deltavar')
-            post `post' (`type') (`logdel') (_b[`sens']) (_se[`sens']) (scalar(`dofname')) (scalar(`neffname'))
+			mat `bname'=`bname'[1,"`sens'"]
+			mat `Vname'=`Vname'["`sens'","`sens'"]
+            post `post' (`type') (`logdel') (`bname'[1,1]) (sqrt(`Vname'[1,1])) (scalar(`dofname')) (scalar(`neffname'))
         }
     }
     di
@@ -543,7 +562,6 @@ else {
         gen exp_b = exp(b)
         gen exp_b_low = exp(b-zcrit*se)
         gen exp_b_upp = exp(b+zcrit*se)
-        local gphoptions yscale(log) `gphoptions'
         local blistvars exp_b exp_b_low exp_b_upp
         local bvar exp_b
     }
@@ -555,8 +573,15 @@ else {
     }
     
     if "`list'"=="list" {    
-        if "`listoptions'"=="" local listoptions sepby(delta) abb(10)
-        list type `dlistvar' `blistvars' dof neff, `listoptions'
+        local 0 , `listoptions'
+        syntax , [SEParator(passthru) sepby(varlist) ABbreviate(passthru) *]
+        if mi("`separator'`sepby'") local listoptions `listoptions' sepby(delta) 
+        if mi("`abbreviate'") local listoptions `listoptions' abbreviate(10)
+        cap noi list type `dlistvar' `blistvars' dof neff, `listoptions'
+        if _rc {
+            di as error "Ignoring suboptions in list(`list2')"
+            list type `dlistvar' `blistvars' dof neff
+        }
     }
     
     if "`graph'"!="nograph" {
@@ -571,6 +596,17 @@ else {
         local lpattern1 = word("`lpatterns'",1)
         local lpattern2 = word("`lpatterns'",2)
         local lpattern3 = word("`lpatterns'",3)
+        if mi("`horizontal'") {
+            local x x
+            local y y
+        }
+        else {
+            local x y
+            local y x
+        }
+        if "`eform'"!="" {
+            local gphoptions `gphoptions' `y'scale(log)
+        }
         if "`ciband'"=="" { // confidence limits as rspikes
             if `stagger'<0 {
                 qui sum deltagraph, meanonly
@@ -586,20 +622,19 @@ else {
             if "`senstype'"=="both" local legendopt legend(order(3) `legendboth' rows(1))
             else if "`senstype'"=="one" local legendopt legend(order(1 5) `legendone' rows(1))
             else local legendopt legend(order(1 3 5) `legendboth' `legendone' rows(1))
+            if mi("`horizontal'") {
+                local vars `bvar' deltagraph
+            }
+            else {
+                local vars deltagraph `bvar' 
+            }
             #delimit ;
-            local graphcmd twoway
-                (line `bvar' deltagraph if type==1, lcol(`col1') `lwidth' `lpattern1') 
-                (rspike `bvar'_low `bvar'_upp deltagraph if type==1, lcol(`col1') `lwidth' `lpattern1')
-                (line `bvar' deltagraph if type==2, lcol(`col2') `lwidth' `lpattern2') 
-                (rspike `bvar'_low `bvar'_upp deltagraph if type==2, lcol(`col2') `lwidth' `lpattern2')
-                (line `bvar' deltagraph if type==3, lcol(`col3') `lwidth' `lpattern3') 
-                (rspike `bvar'_low `bvar'_upp deltagraph if type==3, lcol(`col3') `lwidth' `lpattern3')
-                ,
-                `legendopt'
-                ytitle("`bparmname' for `sens' (`level'% CI)")
-                xtitle(`deltaname' in specified arm(s))
-                `gphoptions'
-            ;
+            local graphcmd twoway;
+            forvalues j=1/3 {;
+                local graphcmd `graphcmd'
+                    (scatter `vars' if type==`j', c(l) lcol(`col`j'') `lwidth' `lpattern`j'' mcol(`col`j'') ms(`msymbol')) 
+                    (rspike `bvar'_low `bvar'_upp deltagraph if type==`j', lcol(`col`j'') `lwidth' `lpattern`j'' `horizontal');
+            };
             #delimit cr
         }
         else { // confidence limits as lines
@@ -612,18 +647,26 @@ else {
             else if "`senstype'"=="one" local legendopt legend(order(1 7) `legendone' rows(1))
             else local legendopt legend(order(1 4 7) `legendboth' `legendone' rows(1))
             #delimit ;
-            local graphcmd twoway
-                (line `bvar' `bvar'_low `bvar'_upp deltagraph if type==1, lcol(`col1' `col1' `col1') `lwidth' `lpattern') 
-                (line `bvar' `bvar'_low `bvar'_upp deltagraph if type==2, lcol(`col2' `col2' `col2') `lwidth' `lpattern') 
-                (line `bvar' `bvar'_low `bvar'_upp deltagraph if type==3, lcol(`col3' `col3' `col3') `lwidth' `lpattern') 
-                ,
-                `legendopt'
-                ytitle(`bparmname' for `sens')
-                xtitle(`deltaname' in specified arm(s))
-                `gphoptions'
-            ;
+            local graphcmd twoway;
+            forvalues j=1/3 {;
+                foreach bvartype in `bvar' `bvar'_low `bvar'_upp {;
+                    if "`bvartype'"=="`bvar'" local lpattern lpattern(`lpattern1');
+                    else local lpattern lpattern(`lpattern2');
+                    if mi("`horizontal'") local vars `bvartype' deltagraph;
+                    else local vars deltagraph `bvartype'; 
+                    local graphcmd `graphcmd' 
+                        (line `vars' if type==`j', lcol(`col`j'' `col`j'' `col`j'') `lwidth' `lpattern');
+                };
+            };
             #delimit cr
         }
+        #delimit ;
+        local graphcmd `graphcmd', `legendopt'
+            `y'title("`bparmname' for `sens' (`level'% CI)")
+            `x'title(`deltaname' in specified arm(s))
+            note(Base: `deltaname' = `base')
+            `gphoptions';
+        #delimit cr
         `ifdebug' di as text `"*** Running: `graphcmd'"'
         `graphcmd'
         if "`clear'"!="" {
@@ -633,6 +676,9 @@ else {
     }
     if "`clear'"!="" {
          restore, not
+    }
+    if "`savedta'"!="" {
+        save `savedtafile', replace
     }
     ereturn clear // Nothing sensible to ereturn
 } // END OF SENSITIVITY ANALYSIS
