@@ -1,0 +1,12 @@
+v 3
+d rctmiss: Analyse a RCT allowing for informatively missing outcome data.
+d Program by Ian White.
+d Version 0.12.1
+d Distribution-Date: 3feb2017 
+f rctmiss.ado
+f rctmiss_smlik.ado
+f rctmiss.sthlp
+f rctmiss.do
+f uk500.dta
+f smoke.dta
+
