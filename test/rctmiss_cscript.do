@@ -210,3 +210,6 @@ dicmd rctmiss, pmmdelta(-10(2)0) auxil(sf_mcsba) fulls ///
 		basemiss(mean) eform(My_eform): ///
 		reg sf_mcs alloc _Icentreid*
 
+// tidy up
+erase SMsens.dta
+erase PMMsens.dta
