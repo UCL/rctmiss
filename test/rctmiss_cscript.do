@@ -7,6 +7,11 @@ cscript for rctmiss
 IRW 16dec2016
 */
 
+* confirm location
+global root c:\ado\ian\rctmiss
+confirm file $root/test/rctmiss_cscript.do
+log using $root/testlogs/rctmiss_cscript.log, replace
+
 pda
 set tracedepth 1
 set trace off
@@ -14,7 +19,7 @@ set more off
 
 which rctmiss
 
-use QUATRO, clear
+use $root/test/QUATRO, clear
 keep id sf_mcs* alloc centreid
 xi i.centreid
 gen miss = mi(sf_mcs)
@@ -213,3 +218,5 @@ dicmd rctmiss, pmmdelta(-10(2)0) auxil(sf_mcsba) fulls ///
 // tidy up
 erase SMsens.dta
 erase PMMsens.dta
+
+log close
