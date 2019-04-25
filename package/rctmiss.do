@@ -1,6 +1,13 @@
-// Example of -rctmiss-
-// Follows help file
-// rctmiss.do 12jan2017
+/* 
+rctmiss.do: example of -rctmiss-, following help file
+
+History:
+25apr2019 syntax corrected - sens options become suboptions
+12jan2017 created
+
+Notes:
+Start in C:\ado\ian\rctmiss\package
+*/
 
 // UK500 data (quantitative outcome)
 
@@ -31,8 +38,9 @@ xi: rctmiss, sens(rand) pmmdelta(-10/0): reg sat96 rand sat94 i.centreid
 
 * Improving appearance:
 
-xi: rctmiss, sens(rand, legend(rows(3)) title(Sensitivity analysis for UK500 data)) ///
-	pmmdelta(-10/0) stagger(0.05) list(sepby(delta)): ///
+xi: rctmiss, pmmdelta(-10/0) ///
+	sens(rand, legend(rows(3)) stagger(0.05) list(sepby(delta)) ///
+		title(Sensitivity analysis for UK500 data)): ///
 	reg sat96 rand sat94 i.centreid
 
 
