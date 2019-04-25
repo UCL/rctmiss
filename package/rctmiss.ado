@@ -1,8 +1,12 @@
-*! version 0.12.4 IRW 13dec2018
+*! version 0.12.5 IRW 25apr2019
 /*******************************************************************************
 TO DO
 	why are *.tmp files sometimes created? e.g. MFC6AD7.tmp
 HISTORY
+version 0.12.5 25apr2019 - Tim Morris various edits to the graph produces by sens()
+    take scheme defaults rather than hard-coded colors
+    markers always appear 'in front' of lines
+    changed option 'MSymbol()' to 'MSymbols()'
 version 0.12.4 13dec2018 - ON UCL WEBSITE AND SSC
 	minor updates to help file
 	no change to ado file
@@ -154,7 +158,7 @@ syntax, [ ///
     sens(string) PMMDelta(string) SMDelta(string) AUXiliary(varlist) FULLSandwich /// model options
     basemiss(string)                            /// missing baseline options
     eform(string) 								/// display options
-	nosw savewt(string) noMMCONStant			/// selection model options
+		nosw savewt(string) noMMCONStant			/// selection model options
     level(passthru) debug mmstore(passthru) keepmat(passthru) dicmd neff(string) ceff(string) /// undocumented options
     ]
 
@@ -178,7 +182,7 @@ if !mi("`sens'") {
 	local 0 `sens'
 	syntax varname, [senstype(string) list LIST2(string) savedta(string) clear nograph /// sensitivity analysis output options 
         stagger(real -1) COLors(string) LWidth(passthru)        /// sensitivity analysis graph options 
-        LPATterns(string) MSymbol(string) ciband HORizontal       /// sensitivity analysis graph options 
+        LPATterns(string) MSymbols(string) ciband HORizontal       /// sensitivity analysis graph options 
         *]
 	local sens `varlist'
     if !mi("`list2'") local list list
@@ -217,7 +221,7 @@ else {
 	local expo
 	local log
 }
-local deltaname2 = cond("`expo'"=="exp", "Exp(delta)", "Delta")
+local deltaname2 = cond("`expo'"=="exp", "Exp({&delta})", "{&delta}")
 local deltaname `deltaname1' `deltaname2' 
 local deltaparm = lower("`deltaname1'`deltaname2'")
 
@@ -445,7 +449,7 @@ if "`sens'"=="" {
     }
 
 	* run main command
-	`ifdebug' di as text `"Running command: `maincmd' delta(`deltavble')"'
+	`ifdebug' di as text `"Running command: `maincmd' delta(`deltavble')"'  /*"*/
     `dicmd' `maincmd' delta(`deltavble')
 
     * start returning results
@@ -594,12 +598,12 @@ else {
         local col1 = word("`colors'",1)
         local col2 = word("`colors'",2)
         local col3 = word("`colors'",3)
-        if "`col1'"=="" local col1 blue
-        if "`col2'"=="" local col2 purple
-        if "`col3'"=="" local col3 red
         local lpattern1 = word("`lpatterns'",1)
         local lpattern2 = word("`lpatterns'",2)
         local lpattern3 = word("`lpatterns'",3)
+        local msym1 = word("`msymbols'",1)
+        local msym2 = word("`msymbols'",2)
+        local msym3 = word("`msymbols'",3)
         if mi("`horizontal'") {
             local x x
             local y y
@@ -614,18 +618,16 @@ else {
         if "`ciband'"=="" { // confidence limits as rspikes
             if `stagger'<0 {
                 qui sum deltagraph, meanonly
-                local stagger = (r(max)-r(min))/100
+                local stagger = (r(max)-r(min))/80
             }
             qui replace deltagraph=deltagraph-`stagger' if type==1
             qui replace deltagraph=deltagraph+`stagger' if type==3
             if "`lpattern1'"!="" local lpattern1 lpattern(`lpattern1')
             if "`lpattern2'"!="" local lpattern2 lpattern(`lpattern2')
             if "`lpattern3'"!="" local lpattern3 lpattern(`lpattern3')
-            local legendboth label(3 "both arms") 
-            local legendone label(1 "`randlab1' only") label(5 "`randlab0' only")
-            if "`senstype'"=="both" local legendopt legend(order(3) `legendboth' rows(1))
-            else if "`senstype'"=="one" local legendopt legend(order(1 5) `legendone' rows(1))
-            else local legendopt legend(order(1 3 5) `legendboth' `legendone' rows(1))
+            if "`senstype'"=="both" local legendopt legend(order(8 "Both arms" 0 "Base: `deltaname' = `base'")
+            else if "`senstype'"=="one" local legendopt legend(order(7 "`randlab1' only" 8 "`randlab0' only" 9 "Base: `deltaname' = `base'"))
+            else local legendopt legend(order(7 "`randlab1' only" 8 "Both arms" 9 "`randlab0' only" 0 "(Base: `deltaname' = `base')"))
             if mi("`horizontal'") {
                 local vars `bvar' deltagraph
             }
@@ -636,8 +638,18 @@ else {
             local graphcmd twoway;
             forvalues j=1/3 {;
                 local graphcmd `graphcmd'
-                    (scatter `vars' if type==`j', c(l) lcol(`col`j'') `lwidth' `lpattern`j'' mcol(`col`j'') ms(`msymbol')) 
-                    (rspike `bvar'_low `bvar'_upp deltagraph if type==`j', lcol(`col`j'') `lwidth' `lpattern`j'' `horizontal');
+                    (rspike `bvar'_low `bvar'_upp deltagraph if type==`j', pstyle(p`j'line) lcol(`col`j'') `lwidth' `lpattern`j'' `horizontal')
+                    ;
+            };
+            forvalues j=1/3 {;
+                local graphcmd `graphcmd'
+										(line `vars' if type==`j', pstyle(p`j'line) lcol(`col`j'') `lwidth' `lpattern`j'')
+                    ;
+            };
+            forvalues j=1/3 {;
+                local graphcmd `graphcmd'
+										(scatter `vars' if type==`j', pstyle(p`j') mcol(`col`j'') msym(`msym`j'')) 
+                    ;
             };
             #delimit cr
         }
@@ -645,11 +657,9 @@ else {
             if "`lpattern1'"=="" local lpattern1 solid
             if "`lpattern2'"=="" local lpattern2 dash
             local lpattern lpattern(`lpattern1' `lpattern2' `lpattern2')
-            local legendboth label(4 "both arms") 
-            local legendone label(1 "`randlab1' only") label(7 "`randlab0' only")
-            if "`senstype'"=="both" local legendopt legend(order(4) `legendboth' rows(1))
-            else if "`senstype'"=="one" local legendopt legend(order(1 7) `legendone' rows(1))
-            else local legendopt legend(order(1 4 7) `legendboth' `legendone' rows(1))
+            if "`senstype'"=="both" local legendopt legend(order(4 "Both arms" 0 "(Base: `deltaname' = `base')"))
+            else if "`senstype'"=="one" local legendopt legend(order(1 "`randlab1' only" 7 "`randlab0' only" 0 "(Base: `deltaname' = `base')"))
+            else local legendopt legend(order(1 "`randlab1' only" 4 "Both arms" 7 "`randlab0' only" 0 "(Base: `deltaname' = `base')"))
             #delimit ;
             local graphcmd twoway;
             forvalues j=1/3 {;
@@ -659,7 +669,7 @@ else {
                     if mi("`horizontal'") local vars `bvartype' deltagraph;
                     else local vars deltagraph `bvartype'; 
                     local graphcmd `graphcmd' 
-                        (line `vars' if type==`j', lcol(`col`j'' `col`j'' `col`j'') `lwidth' `lpattern');
+                        (line `vars' if type==`j', pstyle(p`j'line) lcol(`col`j'') `lwidth' `lpattern');
                 };
             };
             #delimit cr
@@ -668,7 +678,6 @@ else {
         local graphcmd `graphcmd', `legendopt'
             `y'title("`bparmname' for `sens' (`level'% CI)")
             `x'title(`deltaname' in specified arm(s))
-            note(Base: `deltaname' = `base')
             `gphoptions';
         #delimit cr
         `ifdebug' di as text `"*** Running: `graphcmd'"'

@@ -84,8 +84,8 @@ are described below.{p_end}
 {synopt:{opt lw:idth(#)}}{help linewidthstyle:Line width} option for the whole graph.{p_end}
 {synopt:{opt lpat:terns(string)}}Names {help  linepatternstyle:line patterns} for sensitivity analyses; 
 or, with the {opt ciband} option, for point estimate and confidence limits.{p_end}
-{synopt:{opt ms:ymbol(string)}}{help symbolstyle:Symbol style} option for the graph. 
-Use {cmd:msymbol(none)} to suppress marker symbols.{p_end}
+{synopt:{opt ms:ymbols(string)}}{help symbolstyle:Symbol style} option for the graph. 
+Use {cmd:msymbols(none)} to suppress marker symbols.{p_end}
 {synopt:{opt ciband}}Joins confidence limits to each other (as a confidence band) rather than to the point estimates (as in a forest plot).{p_end}
 {synopt:graph_options}Other {help twoway_options:options for twoway graphs}: for example {opt name()}, {opt saving()}, {opt ylab()}, {opt title()} etc.
 
