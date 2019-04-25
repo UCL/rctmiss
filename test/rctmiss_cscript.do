@@ -19,6 +19,7 @@ pda
 set tracedepth 1
 set trace off
 set more off
+local i 0
 
 which rctmiss, all
 
@@ -205,7 +206,7 @@ dicmd rctmiss, smdelta(1) aux(sf_mcsba _I*): logit sf_mcs_bin alloc
 // basemiss
 foreach basemiss in "mean" "mim" "mim, min(5)" "mim, min(30)" {
 dicmd rctmiss, pmmdelta(-10(2)0) auxil(_Icentreid*) ///
-		sens(alloc) ///
+		sens(alloc, name(basemiss`++i')) ///
 		basemiss(`basemiss'): ///
 		reg sf_mcs alloc sf_mcsba 
 }
@@ -214,12 +215,13 @@ dicmd rctmiss, pmmdelta(-10(2)0) auxil(_Icentreid*) ///
 dicmd rctmiss, pmmdelta(-10(2)0) auxil(sf_mcsba) fulls ///
 		sens(alloc, senstype(unequal) list(sep(3)) clear ///
 		stagger(.1) colors(red orange yellow) lwidth(1) lpat(dash) msym(Oh) ciband ///
-		note(This is my note) name(PMMsens,replace) savedta(PMMsens,replace)) ///
+		note(This is my note) name(manyopts,replace) savedta(manyopts,replace)) ///
 		basemiss(mean) eform(My_eform): ///
 		reg sf_mcs alloc _Icentreid*
 
 // tidy up
 erase SMsens.dta
 erase PMMsens.dta
+erase manyopts.dta
 
 log close
