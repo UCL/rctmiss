@@ -258,12 +258,11 @@ That is, use {cmd:xi:rctmiss...} and not {cmd:rctmiss:xi...}.
 {p 0 0 0}Sensitivity analysis, assuming missing values are from 0 to 10 units lower than observed values, 
 in one arm or in both arms:
 
-{phang}. {stata "xi: rctmiss, sens(rand) pmmdelta(-10/0): reg sat96 rand sat94 i.centreid"}
+{phang}. {stata "xi: rctmiss, pmmdelta(-10/0) sens(rand): reg sat96 rand sat94 i.centreid"}
 
 {p 0 0 0}Improving appearance:
 
-{phang}. {stata "xi: rctmiss, sens(rand, legend(rows(3)) title(Sensitivity analysis for UK500 data)) pmmdelta(-10/0) stagger(0.05) list(sepby(delta)): reg sat96 rand sat94 i.centreid"}
-
+{phang}. {stata "xi: rctmiss, pmmdelta(-10/0) sens(rand, legend(rows(3)) stagger(0.05) list(sepby(delta)) title(Sensitivity analysis for UK500 data)): reg sat96 rand sat94 i.centreid"}
 
 {p 0 0 0}{cmd:Smoking data (binary outcome)}
 
@@ -285,7 +284,7 @@ in one arm or in both arms:
 
 {p 0 0 0}Sensitivity analysis based around missing=smoking:
 
-{phang}. {stata "rctmiss, sens(rand) pmmdelta(0(0.1)1, expdelta base(0)): logistic quit rand"}
+{phang}. {stata "rctmiss, pmmdelta(0(0.1)1, expdelta base(0)) sens(rand): logistic quit rand"}
 
 
 {title:References}{marker references}

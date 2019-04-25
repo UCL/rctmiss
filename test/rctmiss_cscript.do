@@ -10,6 +10,9 @@ IRW 16dec2016
 * confirm location
 global root c:\ado\ian\rctmiss
 confirm file $root/test/rctmiss_cscript.do
+confirm file $root/package/rctmiss.ado
+adopath ++ $root/package/
+cap log close
 log using $root/testlogs/rctmiss_cscript.log, replace
 
 pda
@@ -17,7 +20,7 @@ set tracedepth 1
 set trace off
 set more off
 
-which rctmiss
+which rctmiss, all
 
 use $root/test/QUATRO, clear
 keep id sf_mcs* alloc centreid
