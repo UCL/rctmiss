@@ -1,9 +1,9 @@
-*! version 0.12.5 IRW 13dec2018
+*! version 0.12.5 IRW 25apr2019
 /*******************************************************************************
 TO DO
 	why are *.tmp files sometimes created? e.g. MFC6AD7.tmp
 HISTORY
-version 0.12.5 02apr2019 - Tim Morris various edits to the graph produces by sens()
+version 0.12.5 25apr2019 - Tim Morris various edits to the graph produces by sens()
     take scheme defaults rather than hard-coded colors
     markers always appear 'in front' of lines
     changed option 'MSymbol()' to 'MSymbols()'
