@@ -7,6 +7,7 @@ version 0.12.5 25apr2019 - Tim Morris various edits to the graph produces by sen
     take scheme defaults rather than hard-coded colors
     markers always appear 'in front' of lines
     changed option 'MSymbol()' to 'MSymbols()'
+	move statement of base from note to legend
 version 0.12.4 13dec2018 - ON UCL WEBSITE AND SSC
 	minor updates to help file
 	no change to ado file

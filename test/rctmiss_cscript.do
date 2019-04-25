@@ -206,7 +206,7 @@ dicmd rctmiss, smdelta(1) aux(sf_mcsba _I*): logit sf_mcs_bin alloc
 // basemiss
 foreach basemiss in "mean" "mim" "mim, min(5)" "mim, min(30)" {
 dicmd rctmiss, pmmdelta(-10(2)0) auxil(_Icentreid*) ///
-		sens(alloc, name(basemiss`++i')) ///
+		sens(alloc, name(basemiss`++i',replace)) ///
 		basemiss(`basemiss'): ///
 		reg sf_mcs alloc sf_mcsba 
 }

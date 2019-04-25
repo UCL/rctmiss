@@ -2,7 +2,7 @@
       name:  <unnamed>
        log:  c:\ado\ian\rctmiss/testlogs/rctmiss_cscript.log
   log type:  text
- opened on:  25 Apr 2019, 18:06:34
+ opened on:  25 Apr 2019, 18:17:34
 
 . 
 . pda
@@ -19,9 +19,6 @@
 . which rctmiss, all
 
 c:\ado\ian\rctmiss/package/rctmiss.ado
-*! version 0.12.5 IRW 25apr2019
-
-.\rctmiss.ado
 *! version 0.12.5 IRW 25apr2019
 
 c:\ado\stbplus\r\rctmiss.ado
@@ -1189,8 +1186,7 @@ Missing data model:      Pattern-mixture model
 {&delta}:                -10(2)0 (base = 0)
 Auxiliary variables:     (none)
 Estimation method:       Two linear regressions
-Performing sensitivity analyses(note: file PMMsens.dta not found)
-......
+Performing sensitivity analyses......
 
      +------------------------------------------------------------------------+
      |              type   delta           b         se        dof       neff |
@@ -1231,8 +1227,7 @@ Missing data model:      Selection model
 {&delta}:                -2(.1)0 (base = 0)
 Auxiliary variables:     (none)
 Estimation method:       Inverse probability weighting
-Performing sensitivity analyses(note: file SMsens.dta not found)
-.....................
+Performing sensitivity analyses.....................
 
      +---------------------------------------------------------------+
      |              type   delta           b         se   dof   neff |
@@ -1813,11 +1808,11 @@ Effective sample size:   367
 . // basemiss
 . foreach basemiss in "mean" "mim" "mim, min(5)" "mim, min(30)" {
   2. dicmd rctmiss, pmmdelta(-10(2)0) auxil(_Icentreid*) ///
->                 sens(alloc, name(basemiss`++i')) ///
+>                 sens(alloc, name(basemiss`++i',replace)) ///
 >                 basemiss(`basemiss'): ///
 >                 reg sf_mcs alloc sf_mcsba 
   3. }
-rctmiss, pmmdelta(-10(2)0) auxil(_Icentreid*) sens(alloc, name(basemiss1)) basemiss(mean): reg sf_mcs alloc sf_mcsba
+rctmiss, pmmdelta(-10(2)0) auxil(_Icentreid*) sens(alloc, name(basemiss1,replace)) basemiss(mean): reg sf_mcs alloc sf_mcsba
 
 ---------- RCT analysis allowing for informatively missing outcomes ----------
 Incomplete covariate:    sf_mcsba has 23 missing values
@@ -1831,7 +1826,7 @@ Auxiliary variables:     _Icentreid_2 _Icentreid_3 _Icentreid_5
 Estimation method:       Full sandwich variance
 Performing sensitivity analyses......
 Drawing graph...
-rctmiss, pmmdelta(-10(2)0) auxil(_Icentreid*) sens(alloc, name(basemiss2)) basemiss(mim): reg sf_mcs alloc sf_mcsba
+rctmiss, pmmdelta(-10(2)0) auxil(_Icentreid*) sens(alloc, name(basemiss2,replace)) basemiss(mim): reg sf_mcs alloc sf_mcsba
 
 ---------- RCT analysis allowing for informatively missing outcomes ----------
 Incomplete covariate:    sf_mcsba has 23 missing values
@@ -1845,7 +1840,7 @@ Auxiliary variables:     _Icentreid_2 _Icentreid_3 _Icentreid_5
 Estimation method:       Full sandwich variance
 Performing sensitivity analyses......
 Drawing graph...
-rctmiss, pmmdelta(-10(2)0) auxil(_Icentreid*) sens(alloc, name(basemiss3)) basemiss(mim, min(5)): reg sf_mcs alloc sf_mcsba
+rctmiss, pmmdelta(-10(2)0) auxil(_Icentreid*) sens(alloc, name(basemiss3,replace)) basemiss(mim, min(5)): reg sf_mcs alloc sf_mcsba
 
 ---------- RCT analysis allowing for informatively missing outcomes ----------
 Incomplete covariate:    sf_mcsba has 23 missing values
@@ -1859,7 +1854,7 @@ Auxiliary variables:     _Icentreid_2 _Icentreid_3 _Icentreid_5
 Estimation method:       Full sandwich variance
 Performing sensitivity analyses......
 Drawing graph...
-rctmiss, pmmdelta(-10(2)0) auxil(_Icentreid*) sens(alloc, name(basemiss4)) basemiss(mim, min(30)): reg sf_mcs alloc sf_mcsba
+rctmiss, pmmdelta(-10(2)0) auxil(_Icentreid*) sens(alloc, name(basemiss4,replace)) basemiss(mim, min(30)): reg sf_mcs alloc sf_mcsba
 
 ---------- RCT analysis allowing for informatively missing outcomes ----------
 Incomplete covariate:    sf_mcsba has 23 missing values
@@ -1936,5 +1931,5 @@ file manyopts.dta saved
       name:  <unnamed>
        log:  c:\ado\ian\rctmiss/testlogs/rctmiss_cscript.log
   log type:  text
- closed on:  25 Apr 2019, 18:07:00
+ closed on:  25 Apr 2019, 18:18:00
 --------------------------------------------------------------------------------------------------------------------------------------
