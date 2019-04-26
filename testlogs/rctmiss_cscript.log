@@ -1,0 +1,1935 @@
+--------------------------------------------------------------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  c:\ado\ian\rctmiss/testlogs/rctmiss_cscript.log
+  log type:  text
+ opened on:  25 Apr 2019, 18:17:34
+
+. 
+. pda
+
+. set tracedepth 1
+
+. set trace off
+
+. set more off
+
+. local i 0
+
+. 
+. which rctmiss, all
+
+c:\ado\ian\rctmiss/package/rctmiss.ado
+*! version 0.12.5 IRW 25apr2019
+
+c:\ado\stbplus\r\rctmiss.ado
+*! version 0.12.4 IRW 13dec2018
+
+. 
+. use $root/test/QUATRO, clear
+
+. keep id sf_mcs* alloc centreid
+
+. xi i.centreid
+i.centreid        _Icentreid_1-5      (naturally coded; _Icentreid_1 omitted)
+
+. gen miss = mi(sf_mcs)
+
+. gen sf_mcs_bin =  sf_mcs>40 if !miss
+(42 missing values generated)
+
+. 
+. summ sf_mcsba, meanonly
+
+. gen sf_mcsba_imp = cond(mi(sf_mcsba),r(mean),sf_mcsba)
+
+. 
+. prog def store
+  1.         mat b0=e(b)
+  2.         mat V0=e(V)
+  3.         if e(cmd)=="regress" scalar df0=e(df_r)
+  4.         else scalar df0=.
+  5. end
+
+. 
+. prog def comp
+  1.         assert e(cmd)=="rctmiss"
+  2.         mat b1=e(b)
+  3.         mat V1=e(V)
+  4.         scalar df1=e(df_r)
+  5.         cap assert mreldif(b0,b1)<1E-6
+  6.         if _rc {
+  7.                 di as error "Point estimates differ"
+  8.                 mat l b0, title(Original b)
+  9.                 mat l b1, title(New b)
+ 10.                 exit 499
+ 11.         }
+ 12.         cap assert mreldif(V0,V1)<1E-6
+ 13.         if _rc {
+ 14.                 di as error "Variance matrices differ"
+ 15.                 mat l V0, title(Original V)
+ 16.                 mat l V1, title(New V)
+ 17.                 exit 499
+ 18.         }
+ 19.         if !mi(scalar(df0)) {
+ 20.                 cap assert reldif(df0,df1)<1E-6
+ 21.                 if _rc {
+ 22.                         di as error "Degrees of freedom differ"
+ 23.                         scalar list df0
+ 24.                         scalar list df1
+ 25.                         exit 499
+ 26.                 }
+ 27.         }
+ 28.         di as text "Comparison succeeded at 1E-6 level"
+ 29. end
+
+. 
+. prog def dicmd
+  1. noi di as input `"`0'"'
+  2. `0'
+  3. end
+
+. 
+. // check perfect agreement 
+. 
+. * MAR, reg
+. dicmd reg sf_mcs alloc sf_mcsba_imp _I*
+reg sf_mcs alloc sf_mcsba_imp _I*
+
+      Source |       SS           df       MS      Number of obs   =       367
+-------------+----------------------------------   F(5, 361)       =     21.28
+       Model |  11446.1854         5  2289.23708   Prob > F        =    0.0000
+    Residual |   38830.523       361  107.563776   R-squared       =    0.2277
+-------------+----------------------------------   Adj R-squared   =    0.2170
+       Total |  50276.7084       366  137.368056   Root MSE        =    10.371
+
+------------------------------------------------------------------------------
+      sf_mcs |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |  -.3513978   1.087709    -0.32   0.747    -2.490441    1.787645
+sf_mcsba_imp |   .4602732   .0490379     9.39   0.000     .3638374     .556709
+_Icentreid_2 |  -2.282849   1.634302    -1.40   0.163    -5.496797    .9310981
+_Icentreid_3 |  -4.374082   1.593382    -2.75   0.006    -7.507558   -1.240605
+_Icentreid_5 |  -.8871499   1.496256    -0.59   0.554    -3.829622    2.055322
+       _cons |   24.71815    2.42929    10.18   0.000     19.94081    29.49549
+------------------------------------------------------------------------------
+
+. store
+
+. dicmd rctmiss, pmmdelta(0): reg sf_mcs alloc sf_mcsba _I*
+rctmiss, pmmdelta(0): reg sf_mcs alloc sf_mcsba _I*
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Incomplete covariate:    sf_mcsba has 23 missing values
+                           - imputed with the mean
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: MAR (missing values ignored)
+Missing data model:      Pattern-mixture model
+{&delta}:                0
+Auxiliary variables:     (none)
+Estimation method:       Two linear regressions
+Effective sample size:   367
+------------------------------------------------------------------------------
+      sf_mcs |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |  -.3513978   1.087709    -0.32   0.747    -2.490441    1.787645
+    sf_mcsba |   .4602732   .0490379     9.39   0.000     .3638374     .556709
+_Icentreid_2 |  -2.282849   1.634302    -1.40   0.163    -5.496797    .9310981
+_Icentreid_3 |  -4.374082   1.593382    -2.75   0.006    -7.507558   -1.240605
+_Icentreid_5 |  -.8871499   1.496256    -0.59   0.554    -3.829622    2.055322
+       _cons |   24.71815    2.42929    10.18   0.000     19.94081    29.49549
+------------------------------------------------------------------------------
+
+. comp    
+Comparison succeeded at 1E-6 level
+
+. 
+. * MAR, reg robust, no x
+. dicmd reg sf_mcs, robust
+reg sf_mcs, robust
+
+Linear regression                               Number of obs     =        367
+                                                F(0, 366)         =       0.00
+                                                Prob > F          =          .
+                                                R-squared         =     0.0000
+                                                Root MSE          =      11.72
+
+------------------------------------------------------------------------------
+             |               Robust
+      sf_mcs |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       _cons |   40.80674   .6118005    66.70   0.000     39.60365    42.00982
+------------------------------------------------------------------------------
+
+. store
+
+. dicmd rctmiss, pmmdelta(0) fullsandwich: reg sf_mcs
+rctmiss, pmmdelta(0) fullsandwich: reg sf_mcs
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: MAR (missing values ignored)
+Missing data model:      Pattern-mixture model
+{&delta}:                0
+Auxiliary variables:     (none)
+Estimation method:       Full sandwich variance
+Effective sample size:   367
+------------------------------------------------------------------------------
+      sf_mcs |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       _cons |   40.80674   .6118005    66.70   0.000     39.60365    42.00982
+------------------------------------------------------------------------------
+
+. comp
+Comparison succeeded at 1E-6 level
+
+. dicmd rctmiss, pmmdelta(0): reg sf_mcs
+rctmiss, pmmdelta(0): reg sf_mcs
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: MAR (missing values ignored)
+Missing data model:      Pattern-mixture model
+{&delta}:                0
+Auxiliary variables:     (none)
+Estimation method:       Two linear regressions
+Effective sample size:   367
+------------------------------------------------------------------------------
+      sf_mcs |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       _cons |   40.80674   .6118005    66.70   0.000     39.60365    42.00982
+------------------------------------------------------------------------------
+
+. comp    
+Comparison succeeded at 1E-6 level
+
+. dicmd rctmiss, smdelta(0): reg sf_mcs
+rctmiss, smdelta(0): reg sf_mcs
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: MAR (missing values ignored)
+Missing data model:      Selection model
+{&delta}:                0
+Auxiliary variables:     (none)
+Estimation method:       Inverse probability weighting
+Weights:                 stabilised
+Summary of weights:      CV  = 0            Max/min = 1
+                         Max = 1            Min     = 1
+                         >0  = 367          Zero    = 0
+Effective sample size:   367
+------------------------------------------------------------------------------
+      sf_mcs |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       _cons |   40.80674   .6118005    66.70   0.000     39.60365    42.00982
+------------------------------------------------------------------------------
+
+. comp    
+Comparison succeeded at 1E-6 level
+
+. 
+. * MAR, reg robust
+. dicmd reg sf_mcs alloc sf_mcsba_imp _I*, robust
+reg sf_mcs alloc sf_mcsba_imp _I*, robust
+
+Linear regression                               Number of obs     =        367
+                                                F(5, 361)         =      22.65
+                                                Prob > F          =     0.0000
+                                                R-squared         =     0.2277
+                                                Root MSE          =     10.371
+
+------------------------------------------------------------------------------
+             |               Robust
+      sf_mcs |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |  -.3513978   1.069948    -0.33   0.743    -2.455511    1.752715
+sf_mcsba_imp |   .4602732   .0495489     9.29   0.000     .3628325     .557714
+_Icentreid_2 |  -2.282849   1.608776    -1.42   0.157      -5.4466    .8809011
+_Icentreid_3 |  -4.374082   1.705039    -2.57   0.011    -7.727138   -1.021026
+_Icentreid_5 |  -.8871499   1.467173    -0.60   0.546     -3.77243     1.99813
+       _cons |   24.71815   2.445198    10.11   0.000     19.90953    29.52677
+------------------------------------------------------------------------------
+
+. store
+
+. dicmd rctmiss, pmmdelta(0) fullsandwich: reg sf_mcs alloc sf_mcsba _I*
+rctmiss, pmmdelta(0) fullsandwich: reg sf_mcs alloc sf_mcsba _I*
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Incomplete covariate:    sf_mcsba has 23 missing values
+                           - imputed with the mean
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: MAR (missing values ignored)
+Missing data model:      Pattern-mixture model
+{&delta}:                0
+Auxiliary variables:     (none)
+Estimation method:       Full sandwich variance
+Effective sample size:   367
+------------------------------------------------------------------------------
+      sf_mcs |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |  -.3513978   1.069948    -0.33   0.743    -2.455511    1.752715
+    sf_mcsba |   .4602732   .0495489     9.29   0.000     .3628325     .557714
+_Icentreid_2 |   -2.28285   1.608776    -1.42   0.157      -5.4466    .8809009
+_Icentreid_3 |  -4.374082   1.705039    -2.57   0.011    -7.727138   -1.021026
+_Icentreid_5 |    -.88715   1.467173    -0.60   0.546     -3.77243     1.99813
+       _cons |   24.71815   2.445198    10.11   0.000     19.90953    29.52677
+------------------------------------------------------------------------------
+
+. comp
+Comparison succeeded at 1E-6 level
+
+. dicmd rctmiss, pmmdelta(0): reg sf_mcs alloc sf_mcsba _I*, robust
+rctmiss, pmmdelta(0): reg sf_mcs alloc sf_mcsba _I*, robust
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Incomplete covariate:    sf_mcsba has 23 missing values
+                           - imputed with the mean
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: MAR (missing values ignored)
+Missing data model:      Pattern-mixture model
+{&delta}:                0
+Auxiliary variables:     (none)
+Estimation method:       Two linear regressions
+Effective sample size:   367
+------------------------------------------------------------------------------
+      sf_mcs |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |  -.3513978   1.069948    -0.33   0.743    -2.455511    1.752715
+    sf_mcsba |   .4602732   .0495489     9.29   0.000     .3628325     .557714
+_Icentreid_2 |  -2.282849   1.608776    -1.42   0.157      -5.4466    .8809011
+_Icentreid_3 |  -4.374082   1.705039    -2.57   0.011    -7.727138   -1.021026
+_Icentreid_5 |  -.8871499   1.467173    -0.60   0.546     -3.77243     1.99813
+       _cons |   24.71815   2.445198    10.11   0.000     19.90953    29.52677
+------------------------------------------------------------------------------
+
+. comp    
+Comparison succeeded at 1E-6 level
+
+. dicmd rctmiss, smdelta(0): reg sf_mcs alloc sf_mcsba _I*
+rctmiss, smdelta(0): reg sf_mcs alloc sf_mcsba _I*
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Incomplete covariate:    sf_mcsba has 23 missing values
+                           - imputed with the mean
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: MAR (missing values ignored)
+Missing data model:      Selection model
+{&delta}:                0
+Auxiliary variables:     (none)
+Estimation method:       Inverse probability weighting
+Weights:                 stabilised
+Summary of weights:      CV  = 2.507e-08    Max/min = 1
+                         Max = 1.0000001    Min     = .99999994
+                         >0  = 367          Zero    = 0
+Effective sample size:   367
+------------------------------------------------------------------------------
+      sf_mcs |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |  -.3513978   1.069948    -0.33   0.743    -2.455511    1.752715
+    sf_mcsba |   .4602732   .0495489     9.29   0.000     .3628325     .557714
+_Icentreid_2 |  -2.282849   1.608776    -1.42   0.157      -5.4466    .8809012
+_Icentreid_3 |  -4.374082   1.705039    -2.57   0.011    -7.727138   -1.021026
+_Icentreid_5 |  -.8871499   1.467173    -0.60   0.546     -3.77243    1.998131
+       _cons |   24.71815   2.445198    10.11   0.000     19.90953    29.52677
+------------------------------------------------------------------------------
+
+. comp    
+Comparison succeeded at 1E-6 level
+
+. 
+. * ditto with constant as variable
+. gen one=1
+
+. dicmd reg sf_mcs alloc sf_mcsba_imp _I* one, robust noconst
+reg sf_mcs alloc sf_mcsba_imp _I* one, robust noconst
+
+Linear regression                               Number of obs     =        367
+                                                F(6, 361)         =    1017.69
+                                                Prob > F          =     0.0000
+                                                R-squared         =     0.9413
+                                                Root MSE          =     10.371
+
+------------------------------------------------------------------------------
+             |               Robust
+      sf_mcs |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |  -.3513978   1.069948    -0.33   0.743    -2.455511    1.752715
+sf_mcsba_imp |   .4602732   .0495489     9.29   0.000     .3628325     .557714
+_Icentreid_2 |  -2.282849   1.608776    -1.42   0.157      -5.4466    .8809011
+_Icentreid_3 |  -4.374082   1.705039    -2.57   0.011    -7.727138   -1.021026
+_Icentreid_5 |  -.8871499   1.467173    -0.60   0.546     -3.77243     1.99813
+         one |   24.71815   2.445198    10.11   0.000     19.90953    29.52677
+------------------------------------------------------------------------------
+
+. store
+
+. dicmd rctmiss, pmmdelta(0) fullsandwich: reg sf_mcs alloc sf_mcsba _I* one, noconst
+rctmiss, pmmdelta(0) fullsandwich: reg sf_mcs alloc sf_mcsba _I* one, noconst
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Incomplete covariate:    sf_mcsba has 23 missing values
+                           - imputed with the mean
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: MAR (missing values ignored)
+Missing data model:      Pattern-mixture model
+{&delta}:                0
+Auxiliary variables:     (none)
+Estimation method:       Full sandwich variance
+Effective sample size:   367
+------------------------------------------------------------------------------
+      sf_mcs |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |  -.3513978   1.069948    -0.33   0.743    -2.455511    1.752715
+    sf_mcsba |   .4602732   .0495489     9.29   0.000     .3628325     .557714
+_Icentreid_2 |   -2.28285   1.608776    -1.42   0.157      -5.4466    .8809009
+_Icentreid_3 |  -4.374082   1.705039    -2.57   0.011    -7.727138   -1.021026
+_Icentreid_5 |    -.88715   1.467173    -0.60   0.546     -3.77243     1.99813
+         one |   24.71815   2.445198    10.11   0.000     19.90953    29.52677
+------------------------------------------------------------------------------
+
+. comp
+Comparison succeeded at 1E-6 level
+
+. dicmd rctmiss, pmmdelta(0): reg sf_mcs alloc sf_mcsba _I* one, robust noconst
+rctmiss, pmmdelta(0): reg sf_mcs alloc sf_mcsba _I* one, robust noconst
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Incomplete covariate:    sf_mcsba has 23 missing values
+                           - imputed with the mean
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: MAR (missing values ignored)
+Missing data model:      Pattern-mixture model
+{&delta}:                0
+Auxiliary variables:     (none)
+Estimation method:       Two linear regressions
+Effective sample size:   367
+------------------------------------------------------------------------------
+      sf_mcs |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |  -.3513978   1.069948    -0.33   0.743    -2.455511    1.752715
+    sf_mcsba |   .4602732   .0495489     9.29   0.000     .3628325     .557714
+_Icentreid_2 |  -2.282849   1.608776    -1.42   0.157      -5.4466    .8809011
+_Icentreid_3 |  -4.374082   1.705039    -2.57   0.011    -7.727138   -1.021026
+_Icentreid_5 |  -.8871499   1.467173    -0.60   0.546     -3.77243     1.99813
+         one |   24.71815   2.445198    10.11   0.000     19.90953    29.52677
+------------------------------------------------------------------------------
+
+. comp    
+Comparison succeeded at 1E-6 level
+
+. dicmd rctmiss, smdelta(0): reg sf_mcs alloc sf_mcsba _I* one, noconst
+rctmiss, smdelta(0): reg sf_mcs alloc sf_mcsba _I* one, noconst
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Incomplete covariate:    sf_mcsba has 23 missing values
+                           - imputed with the mean
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: MAR (missing values ignored)
+Missing data model:      Selection model
+{&delta}:                0
+Auxiliary variables:     (none)
+Estimation method:       Inverse probability weighting
+Weights:                 stabilised
+Summary of weights:      CV  = 2.507e-08    Max/min = 1
+                         Max = 1.0000001    Min     = .99999994
+                         >0  = 367          Zero    = 0
+Effective sample size:   367
+------------------------------------------------------------------------------
+      sf_mcs |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |  -.3513978   1.069948    -0.33   0.743    -2.455511    1.752715
+    sf_mcsba |   .4602732   .0495489     9.29   0.000     .3628325     .557714
+_Icentreid_2 |  -2.282849   1.608776    -1.42   0.157      -5.4466    .8809012
+_Icentreid_3 |  -4.374082   1.705039    -2.57   0.011    -7.727138   -1.021026
+_Icentreid_5 |  -.8871499   1.467173    -0.60   0.546     -3.77243    1.998131
+         one |   24.71815   2.445198    10.11   0.000     19.90953    29.52677
+------------------------------------------------------------------------------
+
+. comp    
+Comparison succeeded at 1E-6 level
+
+. 
+. * MAR, reg clustered
+. dicmd reg sf_mcs alloc sf_mcsba_imp, cluster(centreid)
+reg sf_mcs alloc sf_mcsba_imp, cluster(centreid)
+
+Linear regression                               Number of obs     =        367
+                                                F(2, 3)           =     243.23
+                                                Prob > F          =     0.0005
+                                                R-squared         =     0.2088
+                                                Root MSE          =     10.454
+
+                               (Std. Err. adjusted for 4 clusters in centreid)
+------------------------------------------------------------------------------
+             |               Robust
+      sf_mcs |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |  -.2800144   .3449087    -0.81   0.476    -1.377668     .817639
+sf_mcsba_imp |   .4705699   .0233423    20.16   0.000     .3962842    .5448556
+       _cons |   22.45907   1.864138    12.05   0.001     16.52655    28.39159
+------------------------------------------------------------------------------
+
+. store
+
+. dicmd rctmiss, pmmdelta(0) fullsandwich: reg sf_mcs alloc sf_mcsba, cluster(centreid)
+rctmiss, pmmdelta(0) fullsandwich: reg sf_mcs alloc sf_mcsba, cluster(centreid)
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Incomplete covariate:    sf_mcsba has 23 missing values
+                           - imputed with the mean
+Observed outcomes:       367 (4 clusters)
+Unobserved outcomes:     42 (4 clusters)
+Missing data assumption: MAR (missing values ignored)
+Missing data model:      Pattern-mixture model
+{&delta}:                0
+Auxiliary variables:     (none)
+Estimation method:       Full sandwich variance
+Variances clustered on:  centreid
+Effective sample size:   367 (4 clusters)
+------------------------------------------------------------------------------
+      sf_mcs |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |  -.2800144   .3449087    -0.81   0.476    -1.377668     .817639
+    sf_mcsba |   .4705699   .0233423    20.16   0.000     .3962842    .5448556
+       _cons |   22.45907   1.864137    12.05   0.001     16.52655    28.39158
+------------------------------------------------------------------------------
+
+. comp    
+Comparison succeeded at 1E-6 level
+
+. dicmd rctmiss, pmmdelta(0): reg sf_mcs alloc sf_mcsba, cluster(centreid)
+rctmiss, pmmdelta(0): reg sf_mcs alloc sf_mcsba, cluster(centreid)
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Incomplete covariate:    sf_mcsba has 23 missing values
+                           - imputed with the mean
+Observed outcomes:       367 (4 clusters)
+Unobserved outcomes:     42 (4 clusters)
+Missing data assumption: MAR (missing values ignored)
+Missing data model:      Pattern-mixture model
+{&delta}:                0
+Auxiliary variables:     (none)
+Estimation method:       Two linear regressions
+Variances clustered on:  centreid
+Effective sample size:   367 (4 clusters)
+------------------------------------------------------------------------------
+      sf_mcs |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |  -.2800144   .3449087    -0.81   0.476    -1.377668     .817639
+    sf_mcsba |   .4705699   .0233423    20.16   0.000     .3962842    .5448556
+       _cons |   22.45907   1.864138    12.05   0.001     16.52655    28.39159
+------------------------------------------------------------------------------
+
+. comp    
+Comparison succeeded at 1E-6 level
+
+. 
+. * MAR, no constant
+. dicmd reg sf_mcs alloc sf_mcsba_imp, robust noconst
+reg sf_mcs alloc sf_mcsba_imp, robust noconst
+
+Linear regression                               Number of obs     =        367
+                                                F(2, 365)         =    2416.32
+                                                Prob > F          =     0.0000
+                                                R-squared         =     0.9205
+                                                Root MSE          =     12.001
+
+------------------------------------------------------------------------------
+             |               Robust
+      sf_mcs |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |   3.508894   1.223337     2.87   0.004     1.103219    5.914568
+sf_mcsba_imp |   .9569233   .0209858    45.60   0.000     .9156549    .9981916
+------------------------------------------------------------------------------
+
+. store
+
+. dicmd rctmiss, pmmdelta(0) fullsandwich: reg sf_mcs alloc sf_mcsba, noconst
+rctmiss, pmmdelta(0) fullsandwich: reg sf_mcs alloc sf_mcsba, noconst
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Incomplete covariate:    sf_mcsba has 23 missing values
+                           - imputed with the mean
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: MAR (missing values ignored)
+Missing data model:      Pattern-mixture model
+{&delta}:                0
+Auxiliary variables:     (none)
+Estimation method:       Full sandwich variance
+Effective sample size:   367
+------------------------------------------------------------------------------
+      sf_mcs |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |   3.508894   1.223337     2.87   0.004     1.103219    5.914568
+    sf_mcsba |   .9569233   .0209858    45.60   0.000      .915655    .9981916
+------------------------------------------------------------------------------
+
+. comp    
+Comparison succeeded at 1E-6 level
+
+. dicmd rctmiss, pmmdelta(0): reg sf_mcs alloc sf_mcsba, noconst robust
+rctmiss, pmmdelta(0): reg sf_mcs alloc sf_mcsba, noconst robust
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Incomplete covariate:    sf_mcsba has 23 missing values
+                           - imputed with the mean
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: MAR (missing values ignored)
+Missing data model:      Pattern-mixture model
+{&delta}:                0
+Auxiliary variables:     (none)
+Estimation method:       Two linear regressions
+Effective sample size:   367
+------------------------------------------------------------------------------
+      sf_mcs |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |   3.508894   1.223337     2.87   0.004     1.103219    5.914568
+    sf_mcsba |   .9569233   .0209858    45.60   0.000     .9156549    .9981916
+------------------------------------------------------------------------------
+
+. comp    
+Comparison succeeded at 1E-6 level
+
+. dicmd rctmiss, smdelta(0): reg sf_mcs alloc sf_mcsba, noconst
+rctmiss, smdelta(0): reg sf_mcs alloc sf_mcsba, noconst
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Incomplete covariate:    sf_mcsba has 23 missing values
+                           - imputed with the mean
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: MAR (missing values ignored)
+Missing data model:      Selection model
+{&delta}:                0
+Auxiliary variables:     (none)
+Estimation method:       Inverse probability weighting
+Weights:                 stabilised
+Summary of weights:      CV  = 2.345e-08    Max/min = 1
+                         Max = 1.0000001    Min     = .99999994
+                         >0  = 367          Zero    = 0
+Effective sample size:   367
+------------------------------------------------------------------------------
+      sf_mcs |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |   3.508894   1.223337     2.87   0.004     1.103219    5.914568
+    sf_mcsba |   .9569233   .0209858    45.60   0.000     .9156549    .9981916
+------------------------------------------------------------------------------
+
+. comp    
+Comparison succeeded at 1E-6 level
+
+. 
+. * MAR, logit
+. dicmd logit sf_mcs_bin alloc sf_mcsba_imp _I*, robust
+logit sf_mcs_bin alloc sf_mcsba_imp _I*, robust
+
+Iteration 0:   log pseudolikelihood = -252.30889  
+Iteration 1:   log pseudolikelihood = -212.83518  
+Iteration 2:   log pseudolikelihood = -212.65959  
+Iteration 3:   log pseudolikelihood = -212.65942  
+Iteration 4:   log pseudolikelihood = -212.65942  
+
+Logistic regression                             Number of obs     =        367
+                                                Wald chi2(5)      =      61.32
+                                                Prob > chi2       =     0.0000
+Log pseudolikelihood = -212.65942               Pseudo R2         =     0.1571
+
+------------------------------------------------------------------------------
+             |               Robust
+  sf_mcs_bin |      Coef.   Std. Err.      z    P>|z|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |   .2440415   .2331848     1.05   0.295    -.2129922    .7010753
+sf_mcsba_imp |   .0866099    .011884     7.29   0.000     .0633178     .109902
+_Icentreid_2 |  -.6345761   .3458791    -1.83   0.067    -1.312487    .0433345
+_Icentreid_3 |  -.9650578   .3588548    -2.69   0.007      -1.6684   -.2617154
+_Icentreid_5 |  -.3352775   .3397793    -0.99   0.324    -1.001233    .3306776
+       _cons |  -2.784994   .5317426    -5.24   0.000     -3.82719   -1.742797
+------------------------------------------------------------------------------
+
+. store
+
+. dicmd rctmiss, pmmdelta(0): logit sf_mcs_bin alloc sf_mcsba _I*
+rctmiss, pmmdelta(0): logit sf_mcs_bin alloc sf_mcsba _I*
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Incomplete covariate:    sf_mcsba has 23 missing values
+                           - imputed with the mean
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: MAR (missing values ignored)
+Missing data model:      Pattern-mixture model
+{&delta}:                0
+Auxiliary variables:     (none)
+Estimation method:       Full sandwich variance
+Effective sample size:   367
+------------------------------------------------------------------------------
+  sf_mcs_bin |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |   .2440415   .2331848     1.05   0.296    -.2145086    .7025916
+    sf_mcsba |   .0866099    .011884     7.29   0.000     .0632405    .1099793
+_Icentreid_2 |  -.6345761   .3458791    -1.83   0.067    -1.314736    .0455837
+_Icentreid_3 |  -.9650578   .3588548    -2.69   0.007    -1.670734   -.2593818
+_Icentreid_5 |  -.3352775   .3397793    -0.99   0.324    -1.003442    .3328871
+       _cons |  -2.784994   .5317426    -5.24   0.000    -3.830648   -1.739339
+------------------------------------------------------------------------------
+
+. comp    
+Comparison succeeded at 1E-6 level
+
+. 
+. * MAR, logit clustered
+. dicmd logit sf_mcs_bin alloc sf_mcsba_imp, cluster(centre)
+logit sf_mcs_bin alloc sf_mcsba_imp, cluster(centre)
+
+Iteration 0:   log pseudolikelihood = -252.30889  
+Iteration 1:   log pseudolikelihood = -217.07025  
+Iteration 2:   log pseudolikelihood =  -216.9686  
+Iteration 3:   log pseudolikelihood = -216.96855  
+Iteration 4:   log pseudolikelihood = -216.96855  
+
+Logistic regression                             Number of obs     =        367
+                                                Wald chi2(2)      =     563.18
+                                                Prob > chi2       =     0.0000
+Log pseudolikelihood = -216.96855               Pseudo R2         =     0.1401
+
+                               (Std. Err. adjusted for 4 clusters in centreid)
+------------------------------------------------------------------------------
+             |               Robust
+  sf_mcs_bin |      Coef.   Std. Err.      z    P>|z|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |   .2546742    .119521     2.13   0.033     .0204173    .4889311
+sf_mcsba_imp |   .0878631   .0117337     7.49   0.000     .0648655    .1108607
+       _cons |  -3.316454   .4931614    -6.72   0.000    -4.283033   -2.349875
+------------------------------------------------------------------------------
+
+. store
+
+. dicmd rctmiss, pmmdelta(0): logit sf_mcs_bin alloc sf_mcsba, cluster(centre)
+rctmiss, pmmdelta(0): logit sf_mcs_bin alloc sf_mcsba, cluster(centre)
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Incomplete covariate:    sf_mcsba has 23 missing values
+                           - imputed with the mean
+Observed outcomes:       367 (4 clusters)
+Unobserved outcomes:     42 (4 clusters)
+Missing data assumption: MAR (missing values ignored)
+Missing data model:      Pattern-mixture model
+{&delta}:                0
+Auxiliary variables:     (none)
+Estimation method:       Full sandwich variance
+Variances clustered on:  centreid
+Effective sample size:   367 (4 clusters)
+------------------------------------------------------------------------------
+  sf_mcs_bin |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |   .2546742    .119521     2.13   0.123    -.1256951    .6350435
+    sf_mcsba |   .0878631   .0117337     7.49   0.005     .0505213    .1252049
+       _cons |  -3.316454   .4931614    -6.72   0.007    -4.885914   -1.746994
+------------------------------------------------------------------------------
+
+. comp    
+Comparison succeeded at 1E-6 level
+
+. 
+. * M=F, logit
+. gen sf_mcs_bin_MF = sf_mcs_bin & !miss
+
+. dicmd logit sf_mcs_bin_MF alloc sf_mcsba_imp _I*, robust
+logit sf_mcs_bin_MF alloc sf_mcsba_imp _I*, robust
+
+Iteration 0:   log pseudolikelihood = -283.48619  
+Iteration 1:   log pseudolikelihood = -249.96087  
+Iteration 2:   log pseudolikelihood = -249.94779  
+Iteration 3:   log pseudolikelihood = -249.94779  
+
+Logistic regression                             Number of obs     =        409
+                                                Wald chi2(5)      =      51.62
+                                                Prob > chi2       =     0.0000
+Log pseudolikelihood = -249.94779               Pseudo R2         =     0.1183
+
+-------------------------------------------------------------------------------
+              |               Robust
+sf_mcs_bin_MF |      Coef.   Std. Err.      z    P>|z|     [95% Conf. Interval]
+--------------+----------------------------------------------------------------
+        alloc |   .0164561   .2151029     0.08   0.939     -.405138    .4380501
+ sf_mcsba_imp |   .0730731   .0108797     6.72   0.000     .0517493     .094397
+ _Icentreid_2 |   -.437388   .3086729    -1.42   0.156    -1.042376    .1675998
+ _Icentreid_3 |  -.5792205   .3197233    -1.81   0.070    -1.205867    .0474257
+ _Icentreid_5 |   .0316982   .3007832     0.11   0.916    -.5578261    .6212225
+        _cons |  -2.674239   .5010687    -5.34   0.000    -3.656315   -1.692162
+-------------------------------------------------------------------------------
+
+. store
+
+. dicmd rctmiss, pmmdelta(-99): logit sf_mcs_bin alloc sf_mcsba _I*
+rctmiss, pmmdelta(-99): logit sf_mcs_bin alloc sf_mcsba _I*
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Incomplete covariate:    sf_mcsba has 23 missing values
+                           - imputed with the mean
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: MNAR
+Missing data model:      Pattern-mixture model
+{&delta}:                -99
+Auxiliary variables:     (none)
+Estimation method:       Full sandwich variance
+Effective sample size:   409
+------------------------------------------------------------------------------
+  sf_mcs_bin |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |   .0164561   .2151029     0.08   0.939    -.4063923    .4393044
+    sf_mcsba |   .0730731   .0108797     6.72   0.000     .0516859    .0944604
+_Icentreid_2 |   -.437388   .3086729    -1.42   0.157    -1.044176    .1693998
+_Icentreid_3 |  -.5792205   .3197233    -1.81   0.071    -1.207731    .0492901
+_Icentreid_5 |   .0316982   .3007832     0.11   0.916    -.5595801    .6229765
+       _cons |  -2.674239   .5010687    -5.34   0.000    -3.659237    -1.68924
+------------------------------------------------------------------------------
+
+. comp
+Comparison succeeded at 1E-6 level
+
+. 
+. * M=F, logit clustered
+. dicmd logit sf_mcs_bin_MF alloc sf_mcsba_imp, cluster(centre)
+logit sf_mcs_bin_MF alloc sf_mcsba_imp, cluster(centre)
+
+Iteration 0:   log pseudolikelihood = -283.48619  
+Iteration 1:   log pseudolikelihood =  -253.0169  
+Iteration 2:   log pseudolikelihood = -253.01494  
+Iteration 3:   log pseudolikelihood = -253.01494  
+
+Logistic regression                             Number of obs     =        409
+                                                Wald chi2(2)      =     319.68
+                                                Prob > chi2       =     0.0000
+Log pseudolikelihood = -253.01494               Pseudo R2         =     0.1075
+
+                                (Std. Err. adjusted for 4 clusters in centreid)
+-------------------------------------------------------------------------------
+              |               Robust
+sf_mcs_bin_MF |      Coef.   Std. Err.      z    P>|z|     [95% Conf. Interval]
+--------------+----------------------------------------------------------------
+        alloc |   .0196886    .128824     0.15   0.879    -.2328018    .2721789
+ sf_mcsba_imp |   .0746821   .0122079     6.12   0.000      .050755    .0986091
+        _cons |  -2.960666   .5291842    -5.59   0.000    -3.997848   -1.923484
+-------------------------------------------------------------------------------
+
+. store
+
+. dicmd rctmiss, pmmdelta(-99): logit sf_mcs_bin alloc sf_mcsba, cluster(centre)
+rctmiss, pmmdelta(-99): logit sf_mcs_bin alloc sf_mcsba, cluster(centre)
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Incomplete covariate:    sf_mcsba has 23 missing values
+                           - imputed with the mean
+Observed outcomes:       367 (4 clusters)
+Unobserved outcomes:     42 (4 clusters)
+Missing data assumption: MNAR
+Missing data model:      Pattern-mixture model
+{&delta}:                -99
+Auxiliary variables:     (none)
+Estimation method:       Full sandwich variance
+Variances clustered on:  centreid
+Effective sample size:   409 (4 clusters)
+------------------------------------------------------------------------------
+  sf_mcs_bin |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |   .0196886    .128824     0.15   0.888    -.3902869     .429664
+    sf_mcsba |   .0746821   .0122079     6.12   0.009      .035831    .1135331
+       _cons |  -2.960666   .5291843    -5.59   0.011    -4.644766   -1.276565
+------------------------------------------------------------------------------
+
+. comp
+Comparison succeeded at 1E-6 level
+
+. 
+. * M=F with auxiliaries, logit
+. dicmd logit sf_mcs_bin_MF alloc, robust
+logit sf_mcs_bin_MF alloc, robust
+
+Iteration 0:   log pseudolikelihood = -283.48619  
+Iteration 1:   log pseudolikelihood =   -283.387  
+Iteration 2:   log pseudolikelihood =   -283.387  
+
+Logistic regression                             Number of obs     =        409
+                                                Wald chi2(1)      =       0.20
+                                                Prob > chi2       =     0.6565
+Log pseudolikelihood =   -283.387               Pseudo R2         =     0.0003
+
+-------------------------------------------------------------------------------
+              |               Robust
+sf_mcs_bin_MF |      Coef.   Std. Err.      z    P>|z|     [95% Conf. Interval]
+--------------+----------------------------------------------------------------
+        alloc |  -.0881109   .1980836    -0.44   0.656    -.4763477    .3001259
+        _cons |   .0292704   .1398721     0.21   0.834    -.2448739    .3034147
+-------------------------------------------------------------------------------
+
+. store
+
+. dicmd rctmiss, pmmdelta(-99) auxiliary(sf_mcsba _I*): logit sf_mcs_bin alloc 
+rctmiss, pmmdelta(-99) auxiliary(sf_mcsba _I*): logit sf_mcs_bin alloc
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Incomplete auxiliary:    sf_mcsba has 23 missing values
+                           - imputed with the mean
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: MNAR
+Missing data model:      Pattern-mixture model
+{&delta}:                -99
+Auxiliary variables:     sf_mcsba _Icentreid_2 _Icentreid_3 _Icentreid_5
+Estimation method:       Full sandwich variance
+Effective sample size:   409
+------------------------------------------------------------------------------
+  sf_mcs_bin |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |  -.0881109   .1980836    -0.44   0.657    -.4775028     .301281
+       _cons |   .0292704   .1398721     0.21   0.834    -.2456896    .3042304
+------------------------------------------------------------------------------
+
+. comp
+Comparison succeeded at 1E-6 level
+
+. 
+. * M=F with auxiliaries, logit clustered
+. dicmd logit sf_mcs_bin_MF alloc, cluster(centre)
+logit sf_mcs_bin_MF alloc, cluster(centre)
+
+Iteration 0:   log pseudolikelihood = -283.48619  
+Iteration 1:   log pseudolikelihood =   -283.387  
+Iteration 2:   log pseudolikelihood =   -283.387  
+
+Logistic regression                             Number of obs     =        409
+                                                Wald chi2(1)      =       0.67
+                                                Prob > chi2       =     0.4115
+Log pseudolikelihood =   -283.387               Pseudo R2         =     0.0003
+
+                                (Std. Err. adjusted for 4 clusters in centreid)
+-------------------------------------------------------------------------------
+              |               Robust
+sf_mcs_bin_MF |      Coef.   Std. Err.      z    P>|z|     [95% Conf. Interval]
+--------------+----------------------------------------------------------------
+        alloc |  -.0881109   .1072851    -0.82   0.411    -.2983858    .1221641
+        _cons |   .0292704   .1462187     0.20   0.841     -.257313    .3158537
+-------------------------------------------------------------------------------
+
+. store
+
+. dicmd rctmiss, pmmdelta(-99) auxiliary(sf_mcsba): logit sf_mcs_bin alloc, cluster(centre)
+rctmiss, pmmdelta(-99) auxiliary(sf_mcsba): logit sf_mcs_bin alloc, cluster(centre)
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Incomplete auxiliary:    sf_mcsba has 23 missing values
+                           - imputed with the mean
+Observed outcomes:       367 (4 clusters)
+Unobserved outcomes:     42 (4 clusters)
+Missing data assumption: MNAR
+Missing data model:      Pattern-mixture model
+{&delta}:                -99
+Auxiliary variables:     sf_mcsba
+Estimation method:       Full sandwich variance
+Variances clustered on:  centreid
+Effective sample size:   409 (4 clusters)
+------------------------------------------------------------------------------
+  sf_mcs_bin |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |  -.0881109   .1072851    -0.82   0.472    -.4295399    .2533182
+       _cons |   .0292704   .1462187     0.20   0.854    -.4360628    .4946035
+------------------------------------------------------------------------------
+
+. comp
+Comparison succeeded at 1E-6 level
+
+. 
+. // check handling of missing baselines
+. dicmd rctmiss, pmmdelta(-5): reg sf_mcs alloc sf_mcsba _I*
+rctmiss, pmmdelta(-5): reg sf_mcs alloc sf_mcsba _I*
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Incomplete covariate:    sf_mcsba has 23 missing values
+                           - imputed with the mean
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: MNAR
+Missing data model:      Pattern-mixture model
+{&delta}:                -5
+Auxiliary variables:     (none)
+Estimation method:       Two linear regressions
+Effective sample size:   367.68719
+------------------------------------------------------------------------------
+      sf_mcs |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |   -.744873   1.097921    -0.68   0.498    -2.903983    1.414238
+    sf_mcsba |    .458823   .0494983     9.27   0.000     .3614824    .5561637
+_Icentreid_2 |  -2.160326   1.654407    -1.31   0.192    -5.413792    1.093139
+_Icentreid_3 |  -3.906322   1.609137    -2.43   0.016    -7.070761   -.7418836
+_Icentreid_5 |  -.3807471   1.511492    -0.25   0.801    -3.353163    2.591669
+       _cons |   24.17503    2.45482     9.85   0.000     19.34752    29.00255
+------------------------------------------------------------------------------
+
+. store
+
+. dicmd rctmiss, pmmdelta(-5): reg sf_mcs alloc sf_mcsba_imp _I*
+rctmiss, pmmdelta(-5): reg sf_mcs alloc sf_mcsba_imp _I*
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: MNAR
+Missing data model:      Pattern-mixture model
+{&delta}:                -5
+Auxiliary variables:     (none)
+Estimation method:       Two linear regressions
+Effective sample size:   367.68719
+------------------------------------------------------------------------------
+      sf_mcs |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |   -.744873   1.097921    -0.68   0.498    -2.903983    1.414238
+sf_mcsba_imp |    .458823   .0494983     9.27   0.000     .3614824    .5561637
+_Icentreid_2 |  -2.160326   1.654407    -1.31   0.192    -5.413792    1.093139
+_Icentreid_3 |  -3.906322   1.609137    -2.43   0.016    -7.070761   -.7418836
+_Icentreid_5 |  -.3807471   1.511492    -0.25   0.801    -3.353163    2.591669
+       _cons |   24.17503    2.45482     9.85   0.000     19.34752    29.00255
+------------------------------------------------------------------------------
+
+. comp
+Comparison succeeded at 1E-6 level
+
+. 
+. 
+. // check syntax more broadly    
+. foreach cmd in "reg sf_mcs" "logit sf_mcs_bin" {
+  2.         foreach delta in -5 0 {
+  3.                 dicmd rctmiss, pmmdelta(`delta') fullsandwich: `cmd' alloc 
+  4.                 dicmd rctmiss, pmmdelta(`delta'): `cmd' alloc 
+  5.                 dicmd rctmiss, aux(sf_mcsba _I*) pmmdelta(`delta'): `cmd' alloc 
+  6.                 dicmd rctmiss, aux(sf_mcsba _I*) smdelta(`delta'): `cmd' alloc 
+  7.         }
+  8.         dicmd rctmiss, pmmdelta(-10(2)0) ///
+>                 sens(alloc, note(`cmd') name(PMMsens,replace) list savedta(PMMsens,replace)): ///
+>                 `cmd' alloc 
+  9.         dicmd rctmiss, smdelta(-2(.1)0)  ///
+>                 sens(alloc, note(`cmd') name(SMsens,replace) list savedta(SMsens,replace)): ///
+>                 `cmd' alloc 
+ 10. }
+rctmiss, pmmdelta(-5) fullsandwich: reg sf_mcs alloc
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: MNAR
+Missing data model:      Pattern-mixture model
+{&delta}:                -5
+Auxiliary variables:     (none)
+Estimation method:       Full sandwich variance
+Effective sample size:   372.67764
+------------------------------------------------------------------------------
+      sf_mcs |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |  -1.470672   1.236596    -1.19   0.235    -3.902295      .96095
+       _cons |    41.0032   .8339468    49.17   0.000     39.36334    42.64306
+------------------------------------------------------------------------------
+rctmiss, pmmdelta(-5): reg sf_mcs alloc
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: MNAR
+Missing data model:      Pattern-mixture model
+{&delta}:                -5
+Auxiliary variables:     (none)
+Estimation method:       Two linear regressions
+Effective sample size:   367.544
+------------------------------------------------------------------------------
+      sf_mcs |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |  -1.470673   1.234362    -1.19   0.234    -3.898014    .9566687
+       _cons |    41.0032   .8504012    48.22   0.000     39.33091     42.6755
+------------------------------------------------------------------------------
+rctmiss, aux(sf_mcsba _I*) pmmdelta(-5): reg sf_mcs alloc
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Incomplete auxiliary:    sf_mcsba has 23 missing values
+                           - imputed with the mean
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: MNAR
+Missing data model:      Pattern-mixture model
+{&delta}:                -5
+Auxiliary variables:     sf_mcsba _Icentreid_2 _Icentreid_3 _Icentreid_5
+Estimation method:       Full sandwich variance
+Effective sample size:   378.17726
+------------------------------------------------------------------------------
+      sf_mcs |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |  -1.470131   1.219525    -1.21   0.229    -3.868071    .9278098
+       _cons |   41.04591   .8255423    49.72   0.000     39.42266    42.66917
+------------------------------------------------------------------------------
+rctmiss, aux(sf_mcsba _I*) smdelta(-5): reg sf_mcs alloc
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Incomplete auxiliary:    sf_mcsba has 23 missing values
+                           - imputed with the mean
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: MNAR
+Missing data model:      Selection model
+{&delta}:                -5
+Auxiliary variables:     sf_mcsba _Icentreid_2 _Icentreid_3 _Icentreid_5
+Estimation method:       Inverse probability weighting
+Weights:                 stabilised
+Summary of weights:      CV  = .88738685    Max/min = 12.821314
+                         Max = 14.945988    Min     = .85784316
+                         >0  = 367          Zero    = 0
+Effective sample size:   367
+------------------------------------------------------------------------------
+      sf_mcs |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |  -2.897343   2.464292    -1.18   0.240    -7.743335    1.948649
+       _cons |   39.79164   1.374662    28.95   0.000     37.08839    42.49489
+------------------------------------------------------------------------------
+rctmiss, pmmdelta(0) fullsandwich: reg sf_mcs alloc
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: MAR (missing values ignored)
+Missing data model:      Pattern-mixture model
+{&delta}:                0
+Auxiliary variables:     (none)
+Estimation method:       Full sandwich variance
+Effective sample size:   367
+------------------------------------------------------------------------------
+      sf_mcs |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |  -1.076961   1.227594    -0.88   0.381    -3.491006    1.337084
+       _cons |   41.32028   .8296039    49.81   0.000     39.68887    42.95168
+------------------------------------------------------------------------------
+rctmiss, pmmdelta(0): reg sf_mcs alloc
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: MAR (missing values ignored)
+Missing data model:      Pattern-mixture model
+{&delta}:                0
+Auxiliary variables:     (none)
+Estimation method:       Two linear regressions
+Effective sample size:   367
+------------------------------------------------------------------------------
+      sf_mcs |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |  -1.076961   1.225297    -0.88   0.380    -3.486488    1.332566
+       _cons |   41.32028   .8461108    48.84   0.000     39.65641    42.98414
+------------------------------------------------------------------------------
+rctmiss, aux(sf_mcsba _I*) pmmdelta(0): reg sf_mcs alloc
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Incomplete auxiliary:    sf_mcsba has 23 missing values
+                           - imputed with the mean
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: MAR (missing values ignored)
+Missing data model:      Pattern-mixture model
+{&delta}:                0
+Auxiliary variables:     sf_mcsba _Icentreid_2 _Icentreid_3 _Icentreid_5
+Estimation method:       Full sandwich variance
+Effective sample size:   375.1508
+------------------------------------------------------------------------------
+      sf_mcs |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |   -1.07642   1.211924    -0.89   0.375    -3.459476    1.306637
+       _cons |   41.36298   .8223237    50.30   0.000     39.74601    42.97995
+------------------------------------------------------------------------------
+rctmiss, aux(sf_mcsba _I*) smdelta(0): reg sf_mcs alloc
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Incomplete auxiliary:    sf_mcsba has 23 missing values
+                           - imputed with the mean
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: MAR (missing values ignored)
+Missing data model:      Selection model
+{&delta}:                0
+Auxiliary variables:     sf_mcsba _Icentreid_2 _Icentreid_3 _Icentreid_5
+Estimation method:       Inverse probability weighting
+Weights:                 stabilised
+Summary of weights:      CV  = .05274514    Max/min = 1.1068071
+                         Max = 1.1905493    Min     = .92966092
+                         >0  = 367          Zero    = 0
+Effective sample size:   367
+------------------------------------------------------------------------------
+      sf_mcs |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |    -1.0531   1.225226    -0.86   0.391    -3.462488    1.356288
+       _cons |   41.34807   .8310739    49.75   0.000     39.71378    42.98237
+------------------------------------------------------------------------------
+rctmiss, pmmdelta(-10(2)0) sens(alloc, note(reg sf_mcs) name(PMMsens,replace) list savedta(PMMsens,replace)): reg sf_mcs alloc
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: Various (sensitivity analysis)
+Missing data model:      Pattern-mixture model
+{&delta}:                -10(2)0 (base = 0)
+Auxiliary variables:     (none)
+Estimation method:       Two linear regressions
+Performing sensitivity analyses......
+
+     +------------------------------------------------------------------------+
+     |              type   delta           b         se        dof       neff |
+     |------------------------------------------------------------------------|
+  1. | intervention only     -10    -2.49853    1.24957   366.3437   368.3437 |
+  2. |         both arms     -10   -1.864384   1.261166    367.087    369.087 |
+  3. |      control only     -10    -.442815    1.23712   365.7379   367.7379 |
+     |------------------------------------------------------------------------|
+  4. | intervention only      -8   -2.214216   1.240886   365.8814   367.8814 |
+  5. |         both arms      -8   -1.706899   1.248372   366.3624   368.3624 |
+  6. |      control only      -8   -.5696443   1.232877   365.4786   367.4786 |
+     |------------------------------------------------------------------------|
+  7. | intervention only      -6   -1.929903    1.23409   365.5056   367.5056 |
+  8. |         both arms      -6   -1.549415   1.238329   365.7785   367.7785 |
+  9. |      control only      -6   -.6964735   1.229566   365.2721   367.2721 |
+     |------------------------------------------------------------------------|
+ 10. | intervention only      -4   -1.645589   1.229213   365.2279   367.2279 |
+ 11. |         both arms      -4    -1.39193   1.231106   365.3499   367.3499 |
+ 12. |      control only      -4   -.8233028   1.227196   365.1219   367.1219 |
+     |------------------------------------------------------------------------|
+ 13. | intervention only      -2   -1.361275   1.226277   365.0575   367.0575 |
+ 14. |         both arms      -2   -1.234446   1.226752   365.0881   367.0881 |
+ 15. |      control only      -2   -.9501321   1.225772   365.0306   367.0306 |
+     |------------------------------------------------------------------------|
+ 16. | intervention only       0   -1.076961   1.225297        365        367 |
+ 17. |         both arms       0   -1.076961   1.225297        365        367 |
+ 18. |      control only       0   -1.076961   1.225297        365        367 |
+     +------------------------------------------------------------------------+
+Drawing graph...
+file PMMsens.dta saved
+rctmiss, smdelta(-2(.1)0) sens(alloc, note(reg sf_mcs) name(SMsens,replace) list savedta(SMsens,replace)): reg sf_mcs alloc
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: Various (sensitivity analysis)
+Missing data model:      Selection model
+{&delta}:                -2(.1)0 (base = 0)
+Auxiliary variables:     (none)
+Estimation method:       Inverse probability weighting
+Performing sensitivity analyses.....................
+
+     +---------------------------------------------------------------+
+     |              type   delta           b         se   dof   neff |
+     |---------------------------------------------------------------|
+  1. | intervention only      -2   -6.361349   4.847277   365    367 |
+  2. |         both arms      -2   -4.671346   5.127421   365    367 |
+  3. |      control only      -2    .6130409    2.07397   365    367 |
+     |---------------------------------------------------------------|
+  4. | intervention only    -1.9   -6.361349   4.847277   365    367 |
+  5. |         both arms    -1.9   -4.671842    5.12605   365    367 |
+  6. |      control only    -1.9    .6125472   2.070576   365    367 |
+     |---------------------------------------------------------------|
+  7. | intervention only    -1.8   -6.361349   4.847277   365    367 |
+  8. |         both arms    -1.8   -4.672499   5.124255   365    367 |
+  9. |      control only    -1.8    .6118896   2.066127   365    367 |
+     |---------------------------------------------------------------|
+ 10. | intervention only    -1.7    -6.36135   4.847278   365    367 |
+ 11. |         both arms    -1.7   -4.673375   5.121906   365    367 |
+ 12. |      control only    -1.7    .6110132   2.060294   365    367 |
+     |---------------------------------------------------------------|
+ 13. | intervention only    -1.6   -6.361349   4.847277   365    367 |
+ 14. |         both arms    -1.6   -4.674548   5.118832   365    367 |
+ 15. |      control only    -1.6      .60984   2.052641   365    367 |
+     |---------------------------------------------------------------|
+ 16. | intervention only    -1.5   -6.361351   4.847278   365    367 |
+ 17. |         both arms    -1.5   -4.676126   5.114813   365    367 |
+ 18. |      control only    -1.5    .6082622   2.042599   365    367 |
+     |---------------------------------------------------------------|
+ 19. | intervention only    -1.4   -6.361348   4.847276   365    367 |
+ 20. |         both arms    -1.4   -4.678257    5.10957   365    367 |
+ 21. |      control only    -1.4    .6061314   2.029432   365    367 |
+     |---------------------------------------------------------------|
+ 22. | intervention only    -1.3   -6.361349   4.847276   365    367 |
+ 23. |         both arms    -1.3   -4.681147   5.102748   365    367 |
+ 24. |      control only    -1.3     .603241   2.012198   365    367 |
+     |---------------------------------------------------------------|
+ 25. | intervention only    -1.2   -6.361347   4.847272   365    367 |
+ 26. |         both arms    -1.2   -4.685082   5.093921   365    367 |
+ 27. |      control only    -1.2    .5993021   1.989715   365    367 |
+     |---------------------------------------------------------------|
+ 28. | intervention only    -1.1   -6.361343   4.847261   365    367 |
+ 29. |         both arms    -1.1   -4.690472   5.082589   365    367 |
+ 30. |      control only    -1.1    .5939091   1.960552   365    367 |
+     |---------------------------------------------------------------|
+ 31. | intervention only      -1   -6.361323   4.847217   365    367 |
+ 32. |         both arms      -1   -4.697873    5.06821   365    367 |
+ 33. |      control only      -1    .5864915   1.923071   365    367 |
+     |---------------------------------------------------------------|
+ 34. | intervention only     -.9   -6.361254   4.847063   365    367 |
+ 35. |         both arms     -.9   -4.708053   5.050226   365    367 |
+ 36. |      control only     -.9    .5762392   1.875569   365    367 |
+     |---------------------------------------------------------------|
+ 37. | intervention only     -.8   -6.360999   4.846498   365    367 |
+ 38. |         both arms     -.8   -4.722058   5.028077   365    367 |
+ 39. |      control only     -.8    .5619792   1.816596   365    367 |
+     |---------------------------------------------------------------|
+ 40. | intervention only     -.7   -6.360031   4.844393   365    367 |
+ 41. |         both arms     -.7   -4.741138   5.000793   365    367 |
+ 42. |      control only     -.7    .5419322   1.745502   365    367 |
+     |---------------------------------------------------------------|
+ 43. | intervention only     -.6   -6.356278   4.836403   365    367 |
+ 44. |         both arms     -.6   -4.766131   4.964873   365    367 |
+ 45. |      control only     -.6    .5131857   1.663176   365    367 |
+     |---------------------------------------------------------------|
+ 46. | intervention only     -.5   -6.341175   4.805245   365    367 |
+ 47. |         both arms     -.5   -4.793843   4.904778   365    367 |
+ 48. |      control only     -.5    .4703726   1.572718   365    367 |
+     |---------------------------------------------------------------|
+ 49. | intervention only     -.4   -6.277822   4.680935   365    367 |
+ 50. |         both arms     -.4   -4.798379   4.753225   365    367 |
+ 51. |      control only     -.4    .4024813    1.47952   365    367 |
+     |---------------------------------------------------------------|
+ 52. | intervention only     -.3   -6.009192   4.199554   365    367 |
+ 53. |         both arms     -.3   -4.646339   4.250023   365    367 |
+ 54. |      control only     -.3     .285892   1.390477   365    367 |
+     |---------------------------------------------------------------|
+ 55. | intervention only     -.2   -5.068777   2.822862   365    367 |
+ 56. |         both arms     -.2   -3.920132   2.860985   365    367 |
+ 57. |      control only     -.2    .0716833   1.312889   365    367 |
+     |---------------------------------------------------------------|
+ 58. | intervention only     -.1   -3.244962   1.461373   365    367 |
+ 59. |         both arms     -.1   -2.509505   1.483507   365    367 |
+ 60. |      control only     -.1   -.3415048   1.253861   365    367 |
+     |---------------------------------------------------------------|
+ 61. | intervention only       0   -1.076961   1.227594   365    367 |
+ 62. |         both arms       0   -1.076961   1.227594   365    367 |
+ 63. |      control only       0   -1.076961   1.227594   365    367 |
+     +---------------------------------------------------------------+
+Drawing graph...
+file SMsens.dta saved
+rctmiss, pmmdelta(-5) fullsandwich: logit sf_mcs_bin alloc
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: MNAR
+Missing data model:      Pattern-mixture model
+{&delta}:                -5
+Auxiliary variables:     (none)
+Estimation method:       Full sandwich variance
+Effective sample size:   407.55152
+------------------------------------------------------------------------------
+  sf_mcs_bin |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |  -.0851639   .1984223    -0.43   0.668    -.4752257    .3048979
+       _cons |   .0312748   .1400142     0.22   0.823    -.2439673    .3065169
+------------------------------------------------------------------------------
+rctmiss, pmmdelta(-5): logit sf_mcs_bin alloc
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: MNAR
+Missing data model:      Pattern-mixture model
+{&delta}:                -5
+Auxiliary variables:     (none)
+Estimation method:       Full sandwich variance
+Effective sample size:   407.55152
+------------------------------------------------------------------------------
+  sf_mcs_bin |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |  -.0851639   .1984223    -0.43   0.668    -.4752257    .3048979
+       _cons |   .0312748   .1400142     0.22   0.823    -.2439673    .3065169
+------------------------------------------------------------------------------
+rctmiss, aux(sf_mcsba _I*) pmmdelta(-5): logit sf_mcs_bin alloc
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Incomplete auxiliary:    sf_mcsba has 23 missing values
+                           - imputed with the mean
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: MNAR
+Missing data model:      Pattern-mixture model
+{&delta}:                -5
+Auxiliary variables:     sf_mcsba _Icentreid_2 _Icentreid_3 _Icentreid_5
+Estimation method:       Full sandwich variance
+Effective sample size:   406.20002
+------------------------------------------------------------------------------
+  sf_mcs_bin |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |  -.0810531   .1986621    -0.41   0.683    -.4715902    .3094839
+       _cons |   .0327954   .1401478     0.23   0.815    -.2427122    .3083029
+------------------------------------------------------------------------------
+rctmiss, aux(sf_mcsba _I*) smdelta(-5): logit sf_mcs_bin alloc
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Incomplete auxiliary:    sf_mcsba has 23 missing values
+                           - imputed with the mean
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: MNAR
+Missing data model:      Selection model
+{&delta}:                -5
+Auxiliary variables:     sf_mcsba _Icentreid_2 _Icentreid_3 _Icentreid_5
+Estimation method:       Inverse probability weighting
+Weights:                 stabilised
+Summary of weights:      CV  = .19120896    Max/min = 2.1606331
+                         Max = 2.5172614    Min     = .85832685
+                         >0  = 367          Zero    = 0
+Effective sample size:   367
+------------------------------------------------------------------------------
+  sf_mcs_bin |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |  -.0803715   .2129567    -0.38   0.706    -.4991476    .3384046
+       _cons |   .0331083   .1462106     0.23   0.821    -.2544127    .3206292
+------------------------------------------------------------------------------
+rctmiss, pmmdelta(0) fullsandwich: logit sf_mcs_bin alloc
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: MAR (missing values ignored)
+Missing data model:      Pattern-mixture model
+{&delta}:                0
+Auxiliary variables:     (none)
+Estimation method:       Full sandwich variance
+Effective sample size:   367
+------------------------------------------------------------------------------
+  sf_mcs_bin |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |   .0973324   .2106153     0.46   0.644    -.3168355    .5115004
+       _cons |   .1670541   .1450391     1.15   0.250    -.1181605    .4522687
+------------------------------------------------------------------------------
+rctmiss, pmmdelta(0): logit sf_mcs_bin alloc
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: MAR (missing values ignored)
+Missing data model:      Pattern-mixture model
+{&delta}:                0
+Auxiliary variables:     (none)
+Estimation method:       Full sandwich variance
+Effective sample size:   367
+------------------------------------------------------------------------------
+  sf_mcs_bin |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |   .0973324   .2106153     0.46   0.644    -.3168355    .5115004
+       _cons |   .1670541   .1450391     1.15   0.250    -.1181605    .4522687
+------------------------------------------------------------------------------
+rctmiss, aux(sf_mcsba _I*) pmmdelta(0): logit sf_mcs_bin alloc
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Incomplete auxiliary:    sf_mcsba has 23 missing values
+                           - imputed with the mean
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: MAR (missing values ignored)
+Missing data model:      Pattern-mixture model
+{&delta}:                0
+Auxiliary variables:     sf_mcsba _Icentreid_2 _Icentreid_3 _Icentreid_5
+Estimation method:       Full sandwich variance
+Effective sample size:   375.60158
+------------------------------------------------------------------------------
+  sf_mcs_bin |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |   .0904934   .2082588     0.43   0.664    -.3190093    .4999961
+       _cons |   .1767973   .1446514     1.22   0.222    -.1076333    .4612279
+------------------------------------------------------------------------------
+rctmiss, aux(sf_mcsba _I*) smdelta(0): logit sf_mcs_bin alloc
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Incomplete auxiliary:    sf_mcsba has 23 missing values
+                           - imputed with the mean
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: MAR (missing values ignored)
+Missing data model:      Selection model
+{&delta}:                0
+Auxiliary variables:     sf_mcsba _Icentreid_2 _Icentreid_3 _Icentreid_5
+Estimation method:       Inverse probability weighting
+Weights:                 stabilised
+Summary of weights:      CV  = .05274514    Max/min = 1.1068071
+                         Max = 1.1905493    Min     = .92966092
+                         >0  = 367          Zero    = 0
+Effective sample size:   367
+------------------------------------------------------------------------------
+  sf_mcs_bin |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |   .1053235   .2109161     0.50   0.618    -.3094399    .5200868
+       _cons |    .171221   .1451048     1.18   0.239    -.1141252    .4565673
+------------------------------------------------------------------------------
+rctmiss, pmmdelta(-10(2)0) sens(alloc, note(logit sf_mcs_bin) name(PMMsens,replace) list savedta(PMMsens,replace)): logit sf_mcs_bin a
+> lloc
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: Various (sensitivity analysis)
+Missing data model:      Pattern-mixture model
+{&delta}:                -10(2)0 (base = 0)
+Auxiliary variables:     (none)
+Estimation method:       Full sandwich variance
+Performing sensitivity analyses......
+
+     +------------------------------------------------------------------------+
+     |              type   delta           b         se        dof       neff |
+     |------------------------------------------------------------------------|
+  1. | intervention only     -10   -.2258609   .2017602   395.3401   396.3401 |
+  2. |         both arms     -10   -.0880908   .1980859     407.99     408.99 |
+  3. |      control only     -10    .2351025   .2070935   381.3049   382.3049 |
+     |------------------------------------------------------------------------|
+  4. | intervention only      -8    -.225646   .2017704   395.2954   396.2954 |
+  5. |         both arms      -8   -.0879628   .1981007   407.9261   408.9261 |
+  6. |      control only      -8    .2350156   .2070977   381.2853   382.2853 |
+     |------------------------------------------------------------------------|
+  7. | intervention only      -6   -.2240629   .2018455   394.9676   395.9676 |
+  8. |         both arms      -6   -.0870203   .1982092   407.4586   408.4586 |
+  9. |      control only      -6    .2343751   .2071285   381.1412   382.1412 |
+     |------------------------------------------------------------------------|
+ 10. | intervention only      -4    -.212635   .2023833    392.688    393.688 |
+ 11. |         both arms      -4    -.080227   .1989849   404.2234   405.2234 |
+ 12. |      control only      -4    .2297405   .2073477   380.1214   381.1214 |
+     |------------------------------------------------------------------------|
+ 13. | intervention only      -2   -.1406553   .2055334   381.1792   382.1792 |
+ 14. |         both arms      -2    -.037868   .2034745   388.1198   389.1198 |
+ 15. |      control only      -2    .2001197   .2086045   374.4955   375.4955 |
+     |------------------------------------------------------------------------|
+ 16. | intervention only       0    .0973324   .2106153        366        367 |
+ 17. |         both arms       0    .0973324   .2106153        366        367 |
+ 18. |      control only       0    .0973324   .2106153        366        367 |
+     +------------------------------------------------------------------------+
+Drawing graph...
+file PMMsens.dta saved
+rctmiss, smdelta(-2(.1)0) sens(alloc, note(logit sf_mcs_bin) name(SMsens,replace) list savedta(SMsens,replace)): logit sf_mcs_bin allo
+> c
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: Various (sensitivity analysis)
+Missing data model:      Selection model
+{&delta}:                -2(.1)0 (base = 0)
+Auxiliary variables:     (none)
+Estimation method:       Inverse probability weighting
+Performing sensitivity analyses.....................
+
+     +---------------------------------------------------------------+
+     |              type   delta           b         se   dof   neff |
+     |---------------------------------------------------------------|
+  1. | intervention only      -2   -.1406555   .2106153   365    367 |
+  2. |         both arms      -2   -.0378682   .2106153   365    367 |
+  3. |      control only      -2    .2001196   .2106153   365    367 |
+     |---------------------------------------------------------------|
+  4. | intervention only    -1.9   -.1331524   .2106153   365    367 |
+  5. |         both arms    -1.9   -.0334945   .2106153   365    367 |
+  6. |      control only    -1.9    .1969903   .2106153   365    367 |
+     |---------------------------------------------------------------|
+  7. | intervention only    -1.8   -.1251255   .2106153   365    367 |
+  8. |         both arms    -1.8    -.028824   .2106153   365    367 |
+  9. |      control only    -1.8    .1936339   .2106153   365    367 |
+     |---------------------------------------------------------------|
+ 10. | intervention only    -1.7   -.1165621   .2106153   365    367 |
+ 11. |         both arms    -1.7   -.0238509   .2106153   365    367 |
+ 12. |      control only    -1.7    .1900436   .2106153   365    367 |
+     |---------------------------------------------------------------|
+ 13. | intervention only    -1.6   -.1074535   .2106153   365    367 |
+ 14. |         both arms    -1.6   -.0185724   .2106153   365    367 |
+ 15. |      control only    -1.6    .1862135   .2106153   365    367 |
+     |---------------------------------------------------------------|
+ 16. | intervention only    -1.5   -.0977948   .2106153   365    367 |
+ 17. |         both arms    -1.5   -.0129869   .2106153   365    367 |
+ 18. |      control only    -1.5    .1821403   .2106153   365    367 |
+     |---------------------------------------------------------------|
+ 19. | intervention only    -1.4   -.0875872   .2106153   365    367 |
+ 20. |         both arms    -1.4   -.0070976   .2106153   365    367 |
+ 21. |      control only    -1.4     .177822   .2106153   365    367 |
+     |---------------------------------------------------------------|
+ 22. | intervention only    -1.3   -.0768376   .2106153   365    367 |
+ 23. |         both arms    -1.3   -.0009106   .2106153   365    367 |
+ 24. |      control only    -1.3    .1732595   .2106153   365    367 |
+     |---------------------------------------------------------------|
+ 25. | intervention only    -1.2   -.0655587   .2106153   365    367 |
+ 26. |         both arms    -1.2    .0055649   .2106153   365    367 |
+ 27. |      control only    -1.2     .168456   .2106153   365    367 |
+     |---------------------------------------------------------------|
+ 28. | intervention only    -1.1   -.0537699   .2106153   365    367 |
+ 29. |         both arms    -1.1    .0123155   .2106153   365    367 |
+ 30. |      control only    -1.1    .1634178   .2106153   365    367 |
+     |---------------------------------------------------------------|
+ 31. | intervention only      -1    -.041498    .210615   365    367 |
+ 32. |         both arms      -1    .0193238   .2106152   365    367 |
+ 33. |      control only      -1    .1581543   .2106153   365    367 |
+     |---------------------------------------------------------------|
+ 34. | intervention only     -.9   -.0287768   .2106151   365    367 |
+ 35. |         both arms     -.9    .0265685   .2106152   365    367 |
+ 36. |      control only     -.9    .1526777   .2106153   365    367 |
+     |---------------------------------------------------------------|
+ 37. | intervention only     -.8   -.0156468   .2106152   365    367 |
+ 38. |         both arms     -.8    .0340247   .2106151   365    367 |
+ 39. |      control only     -.8    .1470041   .2106153   365    367 |
+     |---------------------------------------------------------------|
+ 40. | intervention only     -.7   -.0021557   .2106153   365    367 |
+ 41. |         both arms     -.7    .0416638   .2106153   365    367 |
+ 42. |      control only     -.7     .141152   .2106153   365    367 |
+     |---------------------------------------------------------------|
+ 43. | intervention only     -.6    .0116432   .2106152   365    367 |
+ 44. |         both arms     -.6    .0494543   .2106153   365    367 |
+ 45. |      control only     -.6    .1351435   .2106153   365    367 |
+     |---------------------------------------------------------------|
+ 46. | intervention only     -.5    .0256907   .2106151   365    367 |
+ 47. |         both arms     -.5    .0573616   .2106153   365    367 |
+ 48. |      control only     -.5    .1290033   .2106153   365    367 |
+     |---------------------------------------------------------------|
+ 49. | intervention only     -.4     .039923   .2106153   365    367 |
+ 50. |         both arms     -.4     .065349   .2106153   365    367 |
+ 51. |      control only     -.4    .1227585   .2106153   365    367 |
+     |---------------------------------------------------------------|
+ 52. | intervention only     -.3     .054273   .2106153   365    367 |
+ 53. |         both arms     -.3    .0733786   .2106153   365    367 |
+ 54. |      control only     -.3     .116438   .2106153   365    367 |
+     |---------------------------------------------------------------|
+ 55. | intervention only     -.2    .0686714   .2106153   365    367 |
+ 56. |         both arms     -.2    .0814116   .2106153   365    367 |
+ 57. |      control only     -.2    .1100726   .2106153   365    367 |
+     |---------------------------------------------------------------|
+ 58. | intervention only     -.1    .0830478   .2106153   365    367 |
+ 59. |         both arms     -.1    .0894088   .2106153   365    367 |
+ 60. |      control only     -.1    .1036934   .2106153   365    367 |
+     |---------------------------------------------------------------|
+ 61. | intervention only       0    .0973324   .2106153   365    367 |
+ 62. |         both arms       0    .0973324   .2106153   365    367 |
+ 63. |      control only       0    .0973324   .2106153   365    367 |
+     +---------------------------------------------------------------+
+Drawing graph...
+file SMsens.dta saved
+
+. 
+. // similar analyses
+. dicmd logit sf_mcs_bin alloc sf_mcsba _I*
+logit sf_mcs_bin alloc sf_mcsba _I*
+
+Iteration 0:   log likelihood = -239.94336  
+Iteration 1:   log likelihood = -200.85618  
+Iteration 2:   log likelihood = -200.68008  
+Iteration 3:   log likelihood =  -200.6799  
+Iteration 4:   log likelihood =  -200.6799  
+
+Logistic regression                             Number of obs     =        349
+                                                LR chi2(5)        =      78.53
+                                                Prob > chi2       =     0.0000
+Log likelihood =  -200.6799                     Pseudo R2         =     0.1636
+
+------------------------------------------------------------------------------
+  sf_mcs_bin |      Coef.   Std. Err.      z    P>|z|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |    .243155   .2436982     1.00   0.318    -.2344846    .7207947
+    sf_mcsba |   .0867425   .0120282     7.21   0.000     .0631676    .1103174
+_Icentreid_2 |  -.5466074   .3669714    -1.49   0.136    -1.265858    .1726433
+_Icentreid_3 |  -.8841461   .3596073    -2.46   0.014    -1.588963   -.1793288
+_Icentreid_5 |  -.1537874   .3449589    -0.45   0.656    -.8298944    .5223195
+       _cons |  -2.870885   .5584563    -5.14   0.000    -3.965439   -1.776331
+------------------------------------------------------------------------------
+
+. dicmd rctmiss, pmmdelta(1): logit sf_mcs_bin alloc sf_mcsba _I*
+rctmiss, pmmdelta(1): logit sf_mcs_bin alloc sf_mcsba _I*
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Incomplete covariate:    sf_mcsba has 23 missing values
+                           - imputed with the mean
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: MNAR
+Missing data model:      Pattern-mixture model
+{&delta}:                1
+Auxiliary variables:     (none)
+Estimation method:       Full sandwich variance
+Effective sample size:   373.44531
+------------------------------------------------------------------------------
+  sf_mcs_bin |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |   .3104346   .2311575     1.34   0.180    -.1441029    .7649721
+    sf_mcsba |   .0853721    .011773     7.25   0.000     .0622222     .108522
+_Icentreid_2 |   -.640017    .344061    -1.86   0.064    -1.316563    .0365286
+_Icentreid_3 |  -1.029512   .3547834    -2.90   0.004    -1.727142   -.3318824
+_Icentreid_5 |  -.4175643    .339002    -1.23   0.219    -1.084162    .2490335
+       _cons |  -2.635865   .5281907    -4.99   0.000    -3.674474   -1.597255
+------------------------------------------------------------------------------
+
+. dicmd rctmiss, smdelta(1): logit sf_mcs_bin alloc sf_mcsba _I*
+rctmiss, smdelta(1): logit sf_mcs_bin alloc sf_mcsba _I*
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Incomplete covariate:    sf_mcsba has 23 missing values
+                           - imputed with the mean
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: MNAR
+Missing data model:      Selection model
+{&delta}:                1
+Auxiliary variables:     (none)
+Estimation method:       Inverse probability weighting
+Weights:                 stabilised
+Summary of weights:      CV  = .04600835    Max/min = 1.1826032
+                         Max = 1.3524443    Min     = .87441915
+                         >0  = 367          Zero    = 0
+Effective sample size:   367
+------------------------------------------------------------------------------
+  sf_mcs_bin |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |   .2973145   .2335614     1.27   0.204    -.1619974    .7566263
+    sf_mcsba |   .0848438   .0118048     7.19   0.000      .061629    .1080586
+_Icentreid_2 |  -.6592502   .3484746    -1.89   0.059    -1.344545     .026045
+_Icentreid_3 |  -1.038493   .3589855    -2.89   0.004    -1.744458   -.3325276
+_Icentreid_5 |  -.4221572   .3406134    -1.24   0.216    -1.091993    .2476785
+       _cons |  -2.605053    .530089    -4.91   0.000    -3.647504   -1.562603
+------------------------------------------------------------------------------
+
+. 
+. dicmd logit sf_mcs_bin alloc 
+logit sf_mcs_bin alloc
+
+Iteration 0:   log likelihood = -252.30889  
+Iteration 1:   log likelihood = -252.20177  
+Iteration 2:   log likelihood = -252.20176  
+
+Logistic regression                             Number of obs     =        367
+                                                LR chi2(1)        =       0.21
+                                                Prob > chi2       =     0.6435
+Log likelihood = -252.20176                     Pseudo R2         =     0.0004
+
+------------------------------------------------------------------------------
+  sf_mcs_bin |      Coef.   Std. Err.      z    P>|z|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |   .0973324   .2103281     0.46   0.644    -.3149032     .509568
+       _cons |   .1670541   .1448414     1.15   0.249    -.1168298    .4509379
+------------------------------------------------------------------------------
+
+. dicmd rctmiss, pmmdelta(1): logit sf_mcs_bin alloc 
+rctmiss, pmmdelta(1): logit sf_mcs_bin alloc
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: MNAR
+Missing data model:      Pattern-mixture model
+{&delta}:                1
+Auxiliary variables:     (none)
+Estimation method:       Full sandwich variance
+Effective sample size:   374.71794
+------------------------------------------------------------------------------
+  sf_mcs_bin |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |   .1657901   .2085704     0.79   0.427    -.2443284    .5759087
+       _cons |   .2236388   .1441411     1.55   0.122    -.0597904     .507068
+------------------------------------------------------------------------------
+
+. dicmd rctmiss, smdelta(1): logit sf_mcs_bin alloc 
+rctmiss, smdelta(1): logit sf_mcs_bin alloc
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: MNAR
+Missing data model:      Selection model
+{&delta}:                1
+Auxiliary variables:     (none)
+Estimation method:       Inverse probability weighting
+Weights:                 stabilised
+Summary of weights:      CV  = .04708577    Max/min = 1.0537921
+                         Max = 1.1331967    Min     = .92992872
+                         >0  = 367          Zero    = 0
+Effective sample size:   367
+------------------------------------------------------------------------------
+  sf_mcs_bin |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |   .1657901   .2106153     0.79   0.432    -.2483816    .5799618
+       _cons |   .2236389   .1450391     1.54   0.124    -.0615782    .5088561
+------------------------------------------------------------------------------
+
+. dicmd rctmiss, pmmdelta(1) aux(sf_mcsba _I*): logit sf_mcs_bin alloc 
+rctmiss, pmmdelta(1) aux(sf_mcsba _I*): logit sf_mcs_bin alloc
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Incomplete auxiliary:    sf_mcsba has 23 missing values
+                           - imputed with the mean
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: MNAR
+Missing data model:      Pattern-mixture model
+{&delta}:                1
+Auxiliary variables:     sf_mcsba _Icentreid_2 _Icentreid_3 _Icentreid_5
+Estimation method:       Full sandwich variance
+Effective sample size:   379.09646
+------------------------------------------------------------------------------
+  sf_mcs_bin |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |   .1483982   .2076655     0.71   0.475    -.2599257    .5567221
+       _cons |   .2235887   .1438929     1.55   0.121    -.0593419    .5065192
+------------------------------------------------------------------------------
+
+. dicmd rctmiss, smdelta(1) aux(sf_mcsba _I*): logit sf_mcs_bin alloc 
+rctmiss, smdelta(1) aux(sf_mcsba _I*): logit sf_mcs_bin alloc
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Incomplete auxiliary:    sf_mcsba has 23 missing values
+                           - imputed with the mean
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: MNAR
+Missing data model:      Selection model
+{&delta}:                1
+Auxiliary variables:     sf_mcsba _Icentreid_2 _Icentreid_3 _Icentreid_5
+Estimation method:       Inverse probability weighting
+Weights:                 stabilised
+Summary of weights:      CV  = .07145544    Max/min = 1.2762491
+                         Max = 1.4317602    Min     = .89138466
+                         >0  = 367          Zero    = 0
+Effective sample size:   367
+------------------------------------------------------------------------------
+  sf_mcs_bin |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       alloc |   .1591774   .2109108     0.75   0.451    -.2555754    .5739302
+       _cons |   .2171881   .1451083     1.50   0.135    -.0681651    .5025412
+------------------------------------------------------------------------------
+
+. 
+. // basemiss
+. foreach basemiss in "mean" "mim" "mim, min(5)" "mim, min(30)" {
+  2. dicmd rctmiss, pmmdelta(-10(2)0) auxil(_Icentreid*) ///
+>                 sens(alloc, name(basemiss`++i',replace)) ///
+>                 basemiss(`basemiss'): ///
+>                 reg sf_mcs alloc sf_mcsba 
+  3. }
+rctmiss, pmmdelta(-10(2)0) auxil(_Icentreid*) sens(alloc, name(basemiss1,replace)) basemiss(mean): reg sf_mcs alloc sf_mcsba
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Incomplete covariate:    sf_mcsba has 23 missing values
+                           - imputed with the mean
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: Various (sensitivity analysis)
+Missing data model:      Pattern-mixture model
+{&delta}:                -10(2)0 (base = 0)
+Auxiliary variables:     _Icentreid_2 _Icentreid_3 _Icentreid_5
+Estimation method:       Full sandwich variance
+Performing sensitivity analyses......
+Drawing graph...
+rctmiss, pmmdelta(-10(2)0) auxil(_Icentreid*) sens(alloc, name(basemiss2,replace)) basemiss(mim): reg sf_mcs alloc sf_mcsba
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Incomplete covariate:    sf_mcsba has 23 missing values
+                           - imputed with the mean + indicator Msf_mcsba
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: Various (sensitivity analysis)
+Missing data model:      Pattern-mixture model
+{&delta}:                -10(2)0 (base = 0)
+Auxiliary variables:     _Icentreid_2 _Icentreid_3 _Icentreid_5
+Estimation method:       Full sandwich variance
+Performing sensitivity analyses......
+Drawing graph...
+rctmiss, pmmdelta(-10(2)0) auxil(_Icentreid*) sens(alloc, name(basemiss3,replace)) basemiss(mim, min(5)): reg sf_mcs alloc sf_mcsba
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Incomplete covariate:    sf_mcsba has 23 missing values
+                           - imputed with the mean + indicator Msf_mcsba
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: Various (sensitivity analysis)
+Missing data model:      Pattern-mixture model
+{&delta}:                -10(2)0 (base = 0)
+Auxiliary variables:     _Icentreid_2 _Icentreid_3 _Icentreid_5
+Estimation method:       Full sandwich variance
+Performing sensitivity analyses......
+Drawing graph...
+rctmiss, pmmdelta(-10(2)0) auxil(_Icentreid*) sens(alloc, name(basemiss4,replace)) basemiss(mim, min(30)): reg sf_mcs alloc sf_mcsba
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Incomplete covariate:    sf_mcsba has 23 missing values
+                           - imputed with the mean
+                           - no indicator because <30 missing values
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: Various (sensitivity analysis)
+Missing data model:      Pattern-mixture model
+{&delta}:                -10(2)0 (base = 0)
+Auxiliary variables:     _Icentreid_2 _Icentreid_3 _Icentreid_5
+Estimation method:       Full sandwich variance
+Performing sensitivity analyses......
+Drawing graph...
+
+. 
+. // many options
+. dicmd rctmiss, pmmdelta(-10(2)0) auxil(sf_mcsba) fulls ///
+>                 sens(alloc, senstype(unequal) list(sep(3)) clear ///
+>                 stagger(.1) colors(red orange yellow) lwidth(1) lpat(dash) msym(Oh) ciband ///
+>                 note(This is my note) name(manyopts,replace) savedta(manyopts,replace)) ///
+>                 basemiss(mean) eform(My_eform): ///
+>                 reg sf_mcs alloc _Icentreid*
+rctmiss, pmmdelta(-10(2)0) auxil(sf_mcsba) fulls                 sens(alloc, senstype(unequal) list(sep(3)) clear                 stag
+> ger(.1) colors(red orange yellow) lwidth(1) lpat(dash) msym(Oh) ciband                 note(This is my note) name(manyopts,replace) 
+> savedta(manyopts,replace))                 basemiss(mean) eform(My_eform):                 reg sf_mcs alloc _Icentreid*
+
+---------- RCT analysis allowing for informatively missing outcomes ----------
+Incomplete auxiliary:    sf_mcsba has 23 missing values
+                           - imputed with the mean
+Observed outcomes:       367
+Unobserved outcomes:     42
+Missing data assumption: Various (sensitivity analysis)
+Missing data model:      Pattern-mixture model
+{&delta}:                -10(2)0 (base = 0)
+Auxiliary variables:     sf_mcsba
+Estimation method:       Full sandwich variance
+Performing sensitivity analyses(note: file manyopts.dta not found)
+......
+
+     +------------------------------------------------------------------------------------+
+     |              type   delta      exp_b   exp_b_low   exp_b_upp        dof       neff |
+     |------------------------------------------------------------------------------------|
+  1. | intervention only     -10    .081742    .0074241    .9000096   377.0733   382.0733 |
+  2. |      control only     -10   .6380079    .0590619    6.891994   374.8913   379.8913 |
+  3. | intervention only      -8   .1085573    .0100221    1.175865   374.8074   379.8074 |
+     |------------------------------------------------------------------------------------|
+  4. |      control only      -8   .5617768    .0524596     6.01593    373.287    378.287 |
+  5. | intervention only      -6   .1441694    .0134786    1.542056   372.7104   377.7104 |
+  6. |      control only      -6   .4946541    .0465083    5.261054   371.8631   376.8631 |
+     |------------------------------------------------------------------------------------|
+  7. | intervention only      -4   .1914639    .0180584    2.029999   371.0105   376.0105 |
+  8. |      control only      -4   .4355514    .0411547    4.609555    370.725    375.725 |
+  9. | intervention only      -2   .2542734    .0241016    2.682606   369.9413   374.9413 |
+     |------------------------------------------------------------------------------------|
+ 10. |      control only      -2   .3835104    .0363488    4.046357   369.9711   374.9711 |
+ 11. | intervention only       0   .3376875    .0320435    3.558684   369.6739   374.6739 |
+ 12. |      control only       0   .3376875    .0320435    3.558684   369.6739   374.6739 |
+     +------------------------------------------------------------------------------------+
+Drawing graph...
+Graph command stored in F9
+file manyopts.dta saved
+
+. 
+. // tidy up
+. erase SMsens.dta
+
+. erase PMMsens.dta
+
+. erase manyopts.dta
+
+. 
+. log close
+      name:  <unnamed>
+       log:  c:\ado\ian\rctmiss/testlogs/rctmiss_cscript.log
+  log type:  text
+ closed on:  25 Apr 2019, 18:18:00
+--------------------------------------------------------------------------------------------------------------------------------------
