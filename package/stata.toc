@@ -1,0 +1,7 @@
+v 3
+
+d Ian White's Stata software
+
+p rctmiss:  Analyse a randomised controlled trial (RCT) allowing for informatively missing outcome data
+
+

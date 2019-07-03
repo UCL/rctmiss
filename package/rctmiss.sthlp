@@ -1,5 +1,5 @@
 {smcl}
-{* *! version 0.12.4 13dec2018}{...}
+{* *! version 0.12.5 25apr2019}{...}
 {viewerjumpto "Description" "rctmiss##description"}{...}
 {viewerjumpto "Syntax" "rctmiss##syntax"}{...}
 {viewerjumpto "Graphical sensitivity analyses" "rctmiss##gsa"}{...}

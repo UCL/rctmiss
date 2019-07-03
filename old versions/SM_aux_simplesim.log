@@ -1,0 +1,136 @@
+--------------------------------------------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  C:\Users\ian\Dropbox\ado\rctmiss\SM_aux_simplesim.log
+  log type:  text
+ opened on:   4 Nov 2016, 16:19:56
+Log file SM_aux_simplesim.log opened on  4 Nov 2016 at 16:19:56
+
+. * SM_aux_simplesim: simple simulation with auxiliary variable in selection model
+. * should be easy to build into code
+. * IW 4nov2016
+. 
+. * Simulate data with trt effect of 1 fully mediated by w
+. clear
+
+. set seed 47160
+
+. set obs 100000
+number of observations (_N) was 0, now 100,000
+
+. gen z = runiform()<0.5
+
+. gen w = z+rnormal()
+
+. gen ytrue = w+rnormal()
+
+. gen r = runiform()<invlogit(w-1)
+
+. gen y = ytrue if r
+(59,962 missing values generated)
+
+. 
+. * analysis before data deletion
+. reg ytrue z
+
+      Source |       SS           df       MS      Number of obs   =   100,000
+-------------+----------------------------------   F(1, 99998)     =  12401.91
+       Model |  24884.3513         1  24884.3513   Prob > F        =    0.0000
+    Residual |  200645.296    99,998  2.00649309   R-squared       =    0.1103
+-------------+----------------------------------   Adj R-squared   =    0.1103
+       Total |  225529.648    99,999  2.25531903   Root MSE        =    1.4165
+
+------------------------------------------------------------------------------
+       ytrue |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+           z |   .9976872   .0089588   111.36   0.000     .9801281    1.015246
+       _cons |   .0029872   .0063424     0.47   0.638    -.0094439    .0154182
+------------------------------------------------------------------------------
+
+. 
+. * CCA
+. reg y z 
+
+      Source |       SS           df       MS      Number of obs   =    40,038
+-------------+----------------------------------   F(1, 40036)     =   3477.00
+       Model |  6377.56493         1  6377.56493   Prob > F        =    0.0000
+    Residual |  73434.5345    40,036  1.83421257   R-squared       =    0.0799
+-------------+----------------------------------   Adj R-squared   =    0.0799
+       Total |  79812.0994    40,037  1.99345854   Root MSE        =    1.3543
+
+------------------------------------------------------------------------------
+           y |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+           z |   .8237982   .0139707    58.97   0.000     .7964153    .8511811
+       _cons |   .5867744   .0110327    53.18   0.000       .56515    .6083988
+------------------------------------------------------------------------------
+
+. 
+. * SM with incorrect weights - IMP in wrong selection model (W omitted)
+. rctmiss, smdelta(-1): reg y z
+Missing data assumption: MNAR
+Observed outcomes:       40038
+Unobserved outcomes:     59962 (used in analysis)
+SM delta:                -1
+Method:                  inverse probability weighting
+Weights: stabilised
+
+Summary of weights: CV  = 1.3314466     Max/min = 65.877708
+                    Max = 217.04704     Min     = .30351812
+                    >0  = 40038         Zero    = 0
+Effective sample size:   40038
+------------------------------------------------------------------------------
+           y |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+           z |   1.170876   .0440926    26.55   0.000     1.084453    1.257298
+       _cons |  -.6924008   .0351134   -19.72   0.000     -.761224   -.6235777
+------------------------------------------------------------------------------
+
+. 
+. * SM with correct weights in wrong analysis 
+. rctmiss, smdelta(-1) savewt(wt): reg y w z
+Missing data assumption: MNAR
+Observed outcomes:       40038
+Unobserved outcomes:     59962 (used in analysis)
+SM delta:                -1
+Method:                  inverse probability weighting
+Weights: stabilised
+
+Summary of weights: CV  = .66729635     Max/min = 17.010042
+                    Max = 174.47607     Min     = .09749212
+                    >0  = 40038         Zero    = 0
+Effective sample size:   40038
+------------------------------------------------------------------------------
+           y |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+           w |   1.212177   .0090017   134.66   0.000     1.194533     1.22982
+           z |   .0040351   .0182837     0.22   0.825    -.0318015    .0398716
+       _cons |  -.7197632    .015846   -45.42   0.000    -.7508218   -.6887047
+------------------------------------------------------------------------------
+
+. 
+. * SM with correct weights in right analysis 
+. reg y z [pw=wt]
+(sum of wgt is   4.0017e+04)
+
+Linear regression                               Number of obs     =     40,038
+                                                F(1, 40036)       =    1578.95
+                                                Prob > F          =     0.0000
+                                                R-squared         =     0.0882
+                                                Root MSE          =     1.5543
+
+------------------------------------------------------------------------------
+             |               Robust
+           y |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+           z |   .9973898   .0251004    39.74   0.000     .9481924    1.046587
+       _cons |  -.0011483    .020447    -0.06   0.955    -.0412249    .0389284
+------------------------------------------------------------------------------
+
+. 
+end of do-file
+Log file SM_aux_simplesim.log completed on  4 Nov 2016 at 16:19:59
+      name:  <unnamed>
+       log:  C:\Users\ian\Dropbox\ado\rctmiss\SM_aux_simplesim.log
+  log type:  text
+ closed on:   4 Nov 2016, 16:19:59
+--------------------------------------------------------------------------------------------------------------------
