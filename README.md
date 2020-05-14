@@ -7,3 +7,5 @@ https://doi.org/10.5705/ss.202016.0308.
 
 To install within Stata:
 net install rctmiss, from(https://raw.githubusercontent.com/ucl/rctmiss/master/package/)
+or 
+github install ucl/rctmiss, path(package)
