@@ -6,6 +6,6 @@ White IR, Carpenter J, Horton NJ (2018). A mean score method for sensitivity ana
 https://doi.org/10.5705/ss.202016.0308.
 
 To install within Stata:
-net install rctmiss, from(https://raw.githubusercontent.com/ucl/rctmiss/master/package/)
+- net install rctmiss, from(https://raw.githubusercontent.com/ucl/rctmiss/master/package/)
 or 
-github install ucl/rctmiss, path(package)
+- github install ucl/rctmiss, path(package)
