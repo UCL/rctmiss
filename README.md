@@ -1,3 +1,5 @@
+<a href ="https://www.ctu.mrc.ac.uk/"><img src="MRCCTU_at_UCL_Logo.png" width="50%" /></a>      
+
 # rctmiss: Analyse a randomised controlled trial allowing for informatively missing outcome data.
 
 This is a Stata program to implement the sensitivity analysis approach in the paper:
