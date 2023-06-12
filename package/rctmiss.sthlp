@@ -1,4 +1,5 @@
 {smcl}
+{* *! updated 12jun2023}{...}
 {* *! version 0.12.5 25apr2019}{...}
 {viewerjumpto "Description" "rctmiss##description"}{...}
 {viewerjumpto "Syntax" "rctmiss##syntax"}{...}
@@ -11,6 +12,7 @@
 {viewerjumpto "Limitations" "rctmiss##limitations"}{...}
 {viewerjumpto "Examples" "rctmiss##examples"}{...}
 {viewerjumpto "References" "rctmiss##references"}{...}
+{viewerjumpto "Please cite this program" "rctmiss##citation"}{...}
 {viewerjumpto "Author and updates" "rctmiss##updates"}{...}
 {title:Title}
 
@@ -32,6 +34,9 @@ Assumptions about the missing data are expressed via a sensitivity parameter del
 I recommend the use of the pattern-mixture model as it usually makes the sensitivity parameter delta easier to interpret.
 Results can be obtained for a single assumption (a single value of delta, possibly varying between individuals), 
 or graphed over a range of assumptions (a range of values of delta).
+
+{p 4 4 2}
+This is a user-written command: please cite {help rctmiss##citation:our paper}, which also gives more details of the methods.
 
 
 {marker syntax}{...}
@@ -305,15 +310,29 @@ Statistica Sinica 2018;28:1985–2003.
 {browse "http://onlinelibrary.wiley.com/doi/10.1002/sim.1981/abstract"}
 
 
+{title:Citation}{marker citation}
+
+{phang}If you find this command useful, please cite it as below (and please check for updates): 
+
+{phang}White I, Carpenter J, Horton N. 
+A mean score method for sensitivity analysis to departures from the missing at random assumption in randomised trials. 
+Statistica Sinica 2018; 28: 1985–2003. 
+{browse "https://doi.org/10.5705/ss.202016.0308"}
+
+
 {title:Author and updates}{marker updates}
 
-{p}Ian White, MRC Clinical Trials Unit at UCL, London, UK. 
+{phang}Ian White, MRC Clinical Trials Unit at UCL, London, UK. 
 Email {browse "mailto:ian.white@ucl.ac.uk":ian.white@ucl.ac.uk}.
 
-{p}You can get the latest version of this and my other Stata software using 
+{phang}You can get the latest version of this package by visiting {browse "https://github.com/UCL/rctmiss"}
+or within Stata by running 
+{stata "net from https://raw.githubusercontent.com/UCL/rctmiss/master/package/"}.
+
+{phang}You can browse my other Stata software using 
 {stata "net from http://www.homepages.ucl.ac.uk/~rmjwiww/stata/"}.
 
-{p}I thank James Carpenter (MRC CTU at UCL, UK) and Nicholas Horton (Amherst College, USA) 
+{phang}I thank James Carpenter (MRC CTU at UCL, UK) and Nicholas Horton (Amherst College, USA) 
 for working with me on the theory behind this method,
-and Tim Morris (MRC CTU at UCL, UK) for helpful comments on the progam.
+and Tim Morris (MRC CTU at UCL, UK) for helpful comments on the program.
 
